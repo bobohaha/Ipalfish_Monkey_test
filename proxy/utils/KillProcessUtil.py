@@ -8,7 +8,7 @@ class KillProcessUtil:
 
         print "kill_device_process(): >> serial is " + serial + ", process_name is " + process_name
 
-        command = "adb -s " + serial + " shell ps | grep " + process_name + " | cut -d ' ' -f 2-11"
+        command = "adb -s " + serial + " shell ps -A | grep -i " + process_name + " | cut -d ' ' -f 2-11"
         output = os.popen(command)
         process_id_rst = output.read().strip()
         if ( len(process_id_rst) > 1 ):
