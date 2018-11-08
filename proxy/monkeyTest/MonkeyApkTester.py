@@ -31,6 +31,7 @@ class MonkeyApkTester:
 
     _device_serial = ""
     _log_out_path = ""
+    _log_file_name = ""
     _rom_info = None
     _rom_version = ""
     _device_name = ""
@@ -110,14 +111,20 @@ class MonkeyApkTester:
         package_name_str = ""
 
         for package_name in package_name_ary:
-            package_name_str = package_name_str + " -p" + " " + package_name
+            package_name_str = package_name_str + "-p" + " " + package_name + " "
 
-        log_file_name = "_" + str(time())
+        self._log_file_name = "_" + str(time())
 
-        log_file_full_path = self._log_out_path + "/" + log_file_name
+        log_file_full_path = self._log_out_path + "/" + self._log_file_name
 
         command = "adb -s " + self._device_serial + " shell monkey " \
-                  + monkey_param + package_name_str + " 50000000> " + log_file_full_path + " & "
+                  + monkey_param + package_name_str
+
+        seed_str = self.get_seed()
+        if seed_str is not None:
+            command = command + "-s " + seed_str + " "
+
+        command = command + "50000000 > " + log_file_full_path + " & "
 
         LogUtil.log(command)
         os.system(command)
@@ -180,7 +187,7 @@ class MonkeyApkTester:
 
     def analyze_log(self, round_index, running_time):
 
-        seed_str = self._rom_info["MONKEY_SEED"]
+        seed_str = self.get_seed()
 
         command = "ls " + MonkeyApkTester.OUTPUT_CRASH_PATH + "round_" + str(
             round_index) + "/app_crash*"
@@ -211,6 +218,19 @@ class MonkeyApkTester:
 
         self.results[round_index] = {"seed": seed_str, "times": running_str,
                                      "crash": crash_str, "anr": anr_str}
+
+    def get_seed(self):
+        seed_str = self._rom_info["MONKEY_SEED"]
+        log_file_full_path = self._log_out_path + "/" + self._log_file_name
+        if seed_str is not None and seed_str != "":
+            return seed_str
+        elif self._log_file_name != "" and os.path.exists(log_file_full_path):
+            log_file = open(log_file_full_path, 'r')
+            for line in log_file:
+                if ":Monkey:" in line:
+                    return line.split("seed=")[1].split(" ")[0]
+        else:
+            return None
 
     def write_excel(self):
 
