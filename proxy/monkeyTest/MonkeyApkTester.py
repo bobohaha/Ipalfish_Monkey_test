@@ -118,7 +118,7 @@ class MonkeyApkTester:
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
 
         command = "adb -s " + self._device_serial + " shell monkey " \
-                  + monkey_param + package_name_str
+                  + monkey_param + " " + package_name_str
 
         seed_str = self.get_seed()
         if seed_str is not None:
