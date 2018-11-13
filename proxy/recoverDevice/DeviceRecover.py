@@ -21,6 +21,7 @@ class DeviceRecover:
         pass
 
     def reboot_device(self):
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.reboot(self._device_serial)
         ADBUtil.wait_for_device(self._device_serial)
         ADBUtil.wait_for_reboot_complete(self._device_serial)
