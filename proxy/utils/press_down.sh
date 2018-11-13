@@ -12,7 +12,8 @@ lockPressHome() {
     $adb_command shell input swipe 300 1000 300 500
 
 
-  while [ True ]
+  i=0
+  while [ $i -lt 60 ]
    do
 
 
@@ -24,6 +25,8 @@ lockPressHome() {
 	echo "lockPressHome(): shell input keyevent 4, 3 and sleep 2s"
 
 	sleep 2
+
+	i=$(( $i + 1 ))
 
   done
 
