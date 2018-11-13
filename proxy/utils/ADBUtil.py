@@ -1,11 +1,13 @@
 import os
 from proxy.utils.LogUtil import LogUtil
 from proxy.utils.PathUtil import PathUtil
-
-from time import sleep
 import subprocess
 
+
 class ADBUtil:
+
+    def __init__(self):
+        pass
 
     CURRENT_PATH = PathUtil.get_file_path(__file__)
 
@@ -96,10 +98,38 @@ class ADBUtil:
     def get_prop(serial, prop):
         command = "adb -s " + serial + " shell getprop " + prop
         print command
-        std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        if std_result != None:
+        std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE).communicate()
+        if std_result is not None:
             return std_result.strip()
         else:
             return std_error.strip()
 
-#ADBUtil.install_and_press_down("117cf09", "./app-miui-xxxhdpi-debug.apk ")
+    @staticmethod
+    def get_installed_package_version(serial, package_name):
+        command = "adb -s " + serial + " shell dumpsys package " + package_name \
+                  + " | grep versionCode " \
+                    "| awk -F' '  '{print $1}' " \
+                    "| awk -F'=' '{print $2}' " \
+                    "| awk '{if($1>1) {print $1}}'"
+        print command
+        std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE).communicate()
+        if std_result is not None:
+            return std_result.strip()
+        else:
+            return std_error.strip()
+
+    @staticmethod
+    def broadcast_action(serial, action_name):
+        LogUtil.log_start("broadcast_action: " + action_name)
+        command = "adb -s " + serial + " shell am broadcast -a " + action_name
+        os.system(command)
+        LogUtil.log_end("broadcast_action: " + action_name)
+
+    @staticmethod
+    def wait_for_device(serial):
+        LogUtil.log_start("wait_for_device")
+        command = "adb -s " + serial + "wait-for-device"
+        os.system(command)
+        LogUtil.log_end("wait_for_device")

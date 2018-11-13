@@ -3,6 +3,7 @@
 from base_runner import BaseRunner
 from proxy.proxy import proxy
 
+
 class RunnerImpl(BaseRunner):
 
     _proxy = None
