@@ -190,6 +190,8 @@ class SkipOOBE:
         return self.rst
 
     def make_sure_in_oobe(self):
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+
         _PathUtil = PathUtil(__file__)
         if not os.path.exists("shell"):
             _PathUtil.chdir_here()
