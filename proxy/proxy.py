@@ -17,9 +17,12 @@ class proxy:
     def do_script(self):
         LogUtil.log_start("doScript")
 
+        # LogUtil.log_start("Recovery Devices for Monkey Test")
         # _DeviceRecover = DeviceRecover(self._run._serial)
         # _DeviceRecover.recover_device()
+        # LogUtil.log_end("Recovery Devices for Monkey Test")
         #
+        # LogUtil.log_start("Skip OOBE for Monkey Test")
         # test_region_language = {}
         #
         # _SkipOOBE = SkipOOBE(self._run._serial,
@@ -36,13 +39,16 @@ class proxy:
         # if _SkipOOBE.get_result() is False:
         #     LogUtil.log_end("_SkipOOBE fail")
         #     return
+        # LogUtil.log_end("Skip OOBE for Monkey Test")
 
+        LogUtil.log_start("Presetting for Monkey Test")
         _PreSetter = PreSetter(self._run._serial,
                                self._run._out_path,
                                self._run._param_dict[param.PACKAGE_NAME])
         _PreSetter.download_or_upgrade_apk()
         _PreSetter.install_downloaded_apk()
         _PreSetter.run_presetting()
+        LogUtil.log_end("Presetting for Monkey Test")
 
         LogUtil.log_start("Monkey Test")
 

@@ -99,6 +99,7 @@ class SkipOOBE:
 
     def install_downloaded_apk(self):
         LogUtil.log_start("install_downloaded_apk")
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.install(self._device_serial, "./app-debug.apk")
         ADBUtil.install(self._device_serial, "./app-debug-androidTest.apk")
         LogUtil.log_end("install_downloaded_apk")

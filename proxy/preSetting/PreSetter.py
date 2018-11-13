@@ -32,6 +32,7 @@ class PreSetter:
 
     def install_downloaded_apk(self):
         LogUtil.log_start("install_downloaded_apk")
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.install_and_async_monitor_google_dialog_to_workaround(
             self._device_serial, "./app-debug.apk")
         ADBUtil.install_and_async_monitor_google_dialog_to_workaround(

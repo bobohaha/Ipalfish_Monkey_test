@@ -2,10 +2,10 @@ import os
 from proxy.utils.LogUtil import LogUtil
 from proxy.utils.PathUtil import PathUtil
 import subprocess
+import time
 
 
 class ADBUtil:
-
     def __init__(self):
         pass
 
@@ -133,3 +133,14 @@ class ADBUtil:
         command = "adb -s " + serial + "wait-for-device"
         os.system(command)
         LogUtil.log_end("wait_for_device")
+
+    @staticmethod
+    def wait_for_reboot_complete(serial):
+        while True:
+            status = ADBUtil.get_prop(serial, "sys.boot_completed")
+            if "1" in status and len(status.strip("\n").strip()) == 1:
+                print "boot completed"
+                break
+            else:
+                print "boot not completed wait,after five seconds check"
+                time.sleep(5)

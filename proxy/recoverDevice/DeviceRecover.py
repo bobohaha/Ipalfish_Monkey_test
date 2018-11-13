@@ -23,6 +23,7 @@ class DeviceRecover:
     def reboot_device(self):
         ADBUtil.reboot(self._device_serial)
         ADBUtil.wait_for_device(self._device_serial)
+        ADBUtil.wait_for_reboot_complete(self._device_serial)
         pass
 
     def download_install_apk_and_make_sure_usb(self):
@@ -30,6 +31,7 @@ class DeviceRecover:
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         self.install_downloaded_apk()
         ADBUtil.wait_for_device(self._device_serial)
+        ADBUtil.wait_for_reboot_complete(self._device_serial)
         pass
 
     def download_or_upgrade_apk(self):
