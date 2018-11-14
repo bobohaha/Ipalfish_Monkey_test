@@ -6,6 +6,7 @@ from proxy.utils.PropUtil import PropUtil
 
 from proxy.utils.KillProcessUtil import KillProcessUtil
 from proxy.monkeyTest import xlsxwriter
+from proxy import param
 
 import os
 import re
@@ -50,6 +51,20 @@ class MonkeyApkTester:
         self._rom_version = PropUtil.get_rom_version(serial)
         pass
 
+    def install_test_apk(self):
+        LogUtil.log_end("install_test_apk")
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+        ADBUtil.install_and_async_monitor_google_dialog_to_workaround(
+            self._device_serial, self._rom_info[param.TEST_APK])
+        LogUtil.log_end("install_test_apk")
+
+    def reboot_device(self):
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+        ADBUtil.reboot(self._device_serial)
+        ADBUtil.wait_for_device(self._device_serial)
+        ADBUtil.wait_for_reboot_complete(self._device_serial)
+        pass
+
     def clear_log_folder(self):
         if os.path.exists(MonkeyApkTester.OUTPUT_PATH):
             command = "rm -rf " + MonkeyApkTester.OUTPUT_PATH
@@ -83,6 +98,9 @@ class MonkeyApkTester:
         LogUtil.log_end("run_test")
 
     def test(self, round_index):
+        LogUtil.log_start("test: " + str(round_index))
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+        self.reboot_device()
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
 
         self.run_monkey_in_background()
@@ -91,6 +109,10 @@ class MonkeyApkTester:
 
         self.pull_log(round_index)
         self.analyze_log(round_index, running_time)
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+        self.reboot_device()
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+        LogUtil.log_end("test: " + str(round_index))
 
     def kill_monkey(self):
 
@@ -139,7 +161,8 @@ class MonkeyApkTester:
         monkey_max_time = int(monkey_round_maximum_time_min) * 60
 
         LogUtil.log(
-            "hold_for_monkey_run_time(): monkey_round_maximum_time_min is " + monkey_round_maximum_time_min)
+            "hold_for_monkey_run_time(): monkey_round_maximum_time_min is "
+            + monkey_round_maximum_time_min)
 
         while time() - start_time < monkey_max_time:
             LogUtil.log("hold_for_monkey_run_time(): " + str(time()))

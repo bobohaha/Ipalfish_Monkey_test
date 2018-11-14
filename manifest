@@ -1,5 +1,6 @@
-[{"name":"PACKAGE_NAME","value":"com.mi.android.globalFileexplorer"},
+[{"name":"PACKAGE_NAME","value":"com.xiaomi.glgm"},
 {"name":"MONKEY_ROUND","value":"1"},
 {"name":"MONKEY_ROUND_MAXIMUM_TIME","value":"3"},
 {"name":"MONKEY_SEED","value":""},
-{"name":"MONKEY_PARAM","value":"-v --throttle 300 --pct-touch 30 --pct-motion 20 --pct-nav 20 --pct-majornav 15 --pct-appswitch 5 --pct-anyevent 5 --pct-trackball 0 --pct-syskeys 0 --ignore-crashes --ignore-timeouts --bugreport "}]
+{"name":"MONKEY_PARAM","value":"-v --throttle 300 --pct-touch 30 --pct-motion 20 --pct-nav 20 --pct-majornav 15 --pct-appswitch 5 --pct-anyevent 5 --pct-trackball 0 --pct-syskeys 0 --ignore-crashes --ignore-timeouts --bugreport "},
+{"name":"TEST_APK","value":"/home/mi/jenkins/GeneratedApk/com.xiaomi.glgm/17/source/MIUI_GLOBAL_AUTO_TEST/signed_PLATFORM_17_MIUI_GLOBAL_AUTO_TEST_com.xiaomi.glgm_1.2.304.apk"}]
