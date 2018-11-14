@@ -53,7 +53,8 @@ class ADBUtil:
         text = output.read().strip()
 
         try:
-            proc.terminate()
+            proc.kill()
+            proc.communicate()
         except:
             pass
 
@@ -67,7 +68,7 @@ class ADBUtil:
     @staticmethod
     def press_down(serial):
         proc = subprocess.Popen(["sh", ADBUtil.CURRENT_PATH + '/press_down.sh', serial])
-        print proc.pid
+        LogUtil.log("press_down: pid :" + str(proc.pid))
         return proc
 
     @staticmethod

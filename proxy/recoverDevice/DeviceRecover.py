@@ -75,4 +75,4 @@ class DeviceRecover:
         else:
             self.download_install_apk_and_make_sure_usb()
             self.recover_device()
-        LogUtil.log_start("recover_device")
+        LogUtil.log_end("recover_device")
