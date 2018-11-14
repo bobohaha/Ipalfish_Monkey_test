@@ -1,6 +1,7 @@
 import os
 from proxy.utils.LogUtil import LogUtil
 from proxy.utils.PathUtil import PathUtil
+from proxy.utils.KillProcessUtil import KillProcessUtil
 import subprocess
 import time
 
@@ -55,6 +56,7 @@ class ADBUtil:
         try:
             proc.kill()
             proc.communicate()
+            KillProcessUtil.kill_process_pid(proc.pid)
         except:
             pass
 

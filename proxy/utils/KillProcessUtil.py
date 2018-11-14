@@ -48,6 +48,17 @@ class KillProcessUtil:
         else:
             pass
 
+    @staticmethod
+    def kill_process_pid(process_id):
+        print "kill_process(): >> process_id is " + process_id
+        process_name_command = "ps -p " + process_id + " -o command="
+        process_name_output = os.popen(process_name_command)
+        process_name = process_name_output.read().strip()
+        print "kill_process(): process name is " + process_name
+        kill_command = "kill -9 " + process_id
+        os.system(kill_command)
+        print "kill_process(): << "
+
 # KillProcessUtil.kill_device_process("117cf09", "com.android.commands.monkey")
 #KillProcessUtil.kill_process("press")
 
