@@ -48,7 +48,7 @@ class ADBUtil:
 
         command = "adb -s " + serial + " install -r -d " + apk_path + " & "
 
-        proc = ADBUtil.press_down(serial)
+        proc, proc_comm = ADBUtil.press_down(serial)
 
         output = os.popen(command)
         text = output.read().strip()
@@ -57,6 +57,7 @@ class ADBUtil:
             proc.kill()
             proc.communicate()
             KillProcessUtil.kill_process_pid(proc.pid)
+            KillProcessUtil.kill_process(proc_comm)
         except:
             pass
 
@@ -69,9 +70,10 @@ class ADBUtil:
 
     @staticmethod
     def press_down(serial):
-        proc = subprocess.Popen(["sh", ADBUtil.CURRENT_PATH + '/press_down.sh', serial])
+        press_down_command = ADBUtil.CURRENT_PATH + '/press_down.sh'
+        proc = subprocess.Popen(["sh", press_down_command, serial])
         LogUtil.log("press_down: pid :" + str(proc.pid))
-        return proc
+        return proc, press_down_command
 
     @staticmethod
     def move(serial, device_path, local_path):
