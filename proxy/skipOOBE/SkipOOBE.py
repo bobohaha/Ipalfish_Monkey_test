@@ -174,7 +174,7 @@ class SkipOOBE:
                 self.rst = False
                 break
 
-            if re.search("OK", line):
+            if re.search("OK ", line):
                 LogUtil.log("skipOOBE run OK")
                 self.rst = True
                 break

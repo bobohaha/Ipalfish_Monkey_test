@@ -90,7 +90,7 @@ class PreSetter:
                 self.rst = False
                 break
 
-            if re.search("OK", line):
+            if re.search("OK ", line):
                 LogUtil.log("Presetting run OK")
                 self.rst = True
                 break
