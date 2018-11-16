@@ -54,7 +54,7 @@ class MonkeyApkTester:
     def install_test_apk(self):
         LogUtil.log_start("install_test_apk")
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-        ADBUtil.install_and_async_monitor_google_dialog_to_workaround(
+        ADBUtil.install(
             self._device_serial, self._rom_info[param.TEST_APK])
         LogUtil.log_end("install_test_apk")
 

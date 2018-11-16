@@ -52,7 +52,7 @@ class DeviceRecover:
 
     def install_downloaded_apk(self):
         LogUtil.log_start("install_downloaded_apk")
-        ADBUtil.install_and_async_monitor_google_dialog_to_workaround(
+        ADBUtil.install(
             self._device_serial, SYSOPT_APK_NAME)
         LogUtil.log_end("install_downloaded_apk")
         pass

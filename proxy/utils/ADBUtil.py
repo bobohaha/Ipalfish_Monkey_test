@@ -1,7 +1,6 @@
 import os
 from proxy.utils.LogUtil import LogUtil
 from proxy.utils.PathUtil import PathUtil
-from proxy.utils.KillProcessUtil import KillProcessUtil
 import subprocess
 import time
 
@@ -36,37 +35,48 @@ class ADBUtil:
     def install(serial, apk_path):
         LogUtil.log_start("install")
 
-        command = "adb -s " + serial + " install -r -d " + apk_path
-        LogUtil.log(command)
-        os.system(command)
-
-        LogUtil.log_end("install")
-
-    @staticmethod
-    def install_and_async_monitor_google_dialog_to_workaround(serial, apk_path):
-        LogUtil.log_start("install_and_async_monitor_google_dialog_to_workaround")
+        if not ADBUtil.check_adb_install_enable(serial):
+            ADBUtil.set_adb_install_enable(serial)
 
         command = "adb -s " + serial + " install -r -d " + apk_path + " & "
 
-        proc, proc_comm = ADBUtil.press_down(serial)
-
         output = os.popen(command)
         text = output.read().strip()
-
-        try:
-            proc.kill()
-            proc.communicate()
-            KillProcessUtil.kill_process_pid(proc.pid)
-            KillProcessUtil.kill_process(proc_comm)
-        except:
-            pass
 
         if text.endswith("Success"):
             print "%s install success" % apk_path
         else:
             print "%s install failure" % apk_path
 
-        LogUtil.log_end("install_and_async_monitor_google_dialog_to_workaround")
+        LogUtil.log_end("install")
+
+    @staticmethod
+    def set_adb_install_enable(serial):
+        LogUtil.log_start("set_adb_install_enable")
+
+        command = "adb -s " + serial + " shell settings put global verifier_verify_adb_installs 0"
+        LogUtil.log(command)
+        os.system(command)
+
+        LogUtil.log_end("set_adb_install_enable")
+
+    @staticmethod
+    def check_adb_install_enable(serial):
+        LogUtil.log_start("check_adb_install_enable")
+
+        command = "adb -s " + serial + " shell settings get global verifier_verify_adb_installs"
+
+        output = os.popen(command)
+        text = output.read().strip()
+
+        LogUtil.log("check_adb_install_enable: " + text)
+
+        if text.endswith("0"):
+            LogUtil.log_end("check_adb_install_enable: True")
+            return True
+        else:
+            LogUtil.log_end("check_adb_install_enable: False")
+            return False
 
     @staticmethod
     def press_down(serial):
