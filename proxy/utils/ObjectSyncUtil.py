@@ -24,7 +24,7 @@ class ObjectSyncUtil(FdsUtil):
 
     def get_object_versions_online(self):
         return self.get_folders_names_in_bucket_in_dir(
-            self._download_bucket,
+            self._download_bucket, self._object_number,
             dir=self._object_prefixes)
 
     def get_object_newest_version_online(self):

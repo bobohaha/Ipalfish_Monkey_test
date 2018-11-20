@@ -6,6 +6,8 @@ from proxy.utils.PropUtil import PropUtil
 
 from proxy.utils.KillProcessUtil import KillProcessUtil
 from proxy.monkeyTest import xlsxwriter
+from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
+from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyTestApkLocalName
 from proxy import param
 
 import os
@@ -42,6 +44,8 @@ class MonkeyApkTester:
 
     MONKEY_CHECK_INTERVAL_SECOND = 60
 
+    _MonkeyApkSyncUtil = None
+
     def __init__(self, serial, out_path, param_dict):
         self._device_serial = serial
         self._log_out_path = out_path
@@ -49,14 +53,32 @@ class MonkeyApkTester:
         self.clear_log_folder()
         self._device_name = PropUtil.get_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
+        self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._rom_info[param.PACKAGE_NAME])
         pass
+
+    def download_test_apk(self):
+        _PathUtil = PathUtil(__file__)
+        _PathUtil.chdir_here()
+        self._MonkeyApkSyncUtil.\
+            download_objects_with_version(self._rom_info[param.TEST_APK_BUILD_VERSION])
+    pass
+
+    def install_downloaded_test_apk(self):
+        LogUtil.log_start("install_test_apk")
+        self.install_apk(MonkeyTestApkLocalName)
+        LogUtil.log_end("install_test_apk")
 
     def install_test_apk(self):
         LogUtil.log_start("install_test_apk")
+        self.install_apk(self._rom_info[param.TEST_APK])
+        LogUtil.log_end("install_test_apk")
+
+    def install_apk(self, apk_file_path):
+        LogUtil.log_start("install_apk")
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.install(
-            self._device_serial, self._rom_info[param.TEST_APK])
-        LogUtil.log_end("install_test_apk")
+            self._device_serial, apk_file_path)
+        LogUtil.log_end("install_apk")
 
     def reboot_device(self):
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")

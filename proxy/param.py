@@ -5,7 +5,7 @@ from params import CaseName
 
 # Param from manifest
 PACKAGE_NAME = "PACKAGE_NAME"
-TEST_APK = "TEST_APK"
+TEST_APK_BUILD_VERSION = "TEST_APK_BUILD_VERSION"
 
 # Need connect wifi in OOBE
 NEED_CONNECT_WIFI_DEVICE = []

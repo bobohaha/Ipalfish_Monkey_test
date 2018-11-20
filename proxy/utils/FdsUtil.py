@@ -39,9 +39,10 @@ class FdsUtil:
     def list_all_objects(self, bucket_name, prefix='', delimiter=None):
         return self.fds_client.list_all_objects(bucket_name, prefix, delimiter)
 
-    def get_folders_names_in_bucket_in_dir(self, bucket_name, dir=''):
+    def get_folders_names_in_bucket_in_dir(self, bucket_name, objects_num, dir=''):
         fds_objects_listing = self.list_objects(bucket_name, prefix=dir)
         object_versions = fds_objects_listing.common_prefixes
+
         version = []
 
         for index in range(0, len(object_versions)):
@@ -51,7 +52,14 @@ class FdsUtil:
 
             object_listing = self.list_objects(bucket_name, prefix=fds_obj_version)
             object_summary = object_listing.objects
-            if len(object_summary) != 3:
+            object_summary_num = len(object_summary)
+
+            _has_dir_obj = self.has_dir_object(object_summary)
+            objects_num_temp = objects_num
+            if _has_dir_obj:
+                objects_num_temp = objects_num_temp + 1
+
+            if object_summary_num != objects_num_temp:
                 continue
 
             if isinstance(fds_obj_version, bytes):
@@ -61,7 +69,15 @@ class FdsUtil:
 
             fds_obj_version = path[len(path)-2].strip()
             version.append(int(fds_obj_version))
+
         return version
+
+    def has_dir_object(self, objects):
+        for object in objects:
+            object_name = object.object_name
+            if object_name.endswith("/"):
+                return True
+        return False
 
     def generate_download_object_uri(self, bucket_name, object_name):
         return self.fds_client.generate_download_object_uri(bucket_name, object_name)
@@ -85,7 +101,12 @@ class FdsUtil:
 
         download_objects_num = len(download_objects)
 
-        if 0 <= objects_num+1 != download_objects_num:
+        _has_dir_obj = self.has_dir_object(download_objects)
+
+        if _has_dir_obj:
+            objects_num = objects_num + 1
+
+        if download_objects_num != objects_num:
             raise Exception("The num of objects online is error")
 
         if not os.path.exists(file_download_path):
@@ -119,3 +140,6 @@ class FdsUtil:
 
     def put_object(self, bucket_name, object_name, data, metadata=None):
         self.fds_client.put_object(bucket_name, object_name, data, metadata)
+
+    def does_object_exists(self, bucket_name, object_name):
+        return self.fds_client.does_object_exists(bucket_name, object_name)

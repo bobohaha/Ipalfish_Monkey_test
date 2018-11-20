@@ -55,7 +55,8 @@ class proxy:
         _MonkeyApkTester = MonkeyApkTester(self._run._serial,
                                            self._run._out_path,
                                            self._run._param_dict)
-        _MonkeyApkTester.install_test_apk()
+        _MonkeyApkTester.download_test_apk()
+        _MonkeyApkTester.install_downloaded_test_apk()
         _MonkeyApkTester.run_test()
 
         self._rst = True
