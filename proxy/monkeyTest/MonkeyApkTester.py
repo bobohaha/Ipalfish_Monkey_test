@@ -46,6 +46,8 @@ class MonkeyApkTester:
 
     _MonkeyApkSyncUtil = None
 
+    _rst = False
+
     def __init__(self, serial, out_path, param_dict):
         self._device_serial = serial
         self._log_out_path = out_path
@@ -114,6 +116,7 @@ class MonkeyApkTester:
         for round_index in range(1, round_count + 1):
             self.test(round_index)
 
+        self.analyze_result()
         self.write_excel()
         self.move_result()
 
@@ -314,7 +317,7 @@ class MonkeyApkTester:
         worksheet.write(line, 1, self._rom_version, format_value_center)
         line += 1
         worksheet.write(line, 0, 'Test Result', format_head_title)
-        if len(self.bugs) == 0:
+        if self._rst:
             worksheet.write(line, 1, "Pass", format_value_center)
         else:
             worksheet.write(line, 1, "Failed", format_value_center)
@@ -412,3 +415,9 @@ class MonkeyApkTester:
 
     def get_anr_info(self, filename):
         return self.BUG_TYPE_ANR + re.findall(r"anr_(.+?)_", filename)[0]
+
+    def get_rst(self):
+        return self._rst
+
+    def analyze_result(self):
+        self._rst = len(self.bugs) == 0

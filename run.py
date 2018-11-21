@@ -5,6 +5,7 @@ import os
 from xml.dom import minidom
 
 _SUCCESS_FILE = 'success_feedback'
+_RESULT_FILE = 'execution_result'
 
 
 class ManifestXmlParser:
@@ -84,3 +85,7 @@ if __name__ == '__main__':
 
     if result:
         open(os.path.join(result_path, _SUCCESS_FILE), 'w+').close()
+
+    result_file = open(os.path.join(result_path, _RESULT_FILE), 'w+')
+    result_file.write(str(result))
+    result_file.close()

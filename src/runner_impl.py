@@ -30,4 +30,4 @@ class RunnerImpl(BaseRunner):
         停止所有已开进程或线程,并返回执行结果
         :return: 执行结果: 成功:True 失败:False
         """
-        return True
+        return self._proxy.get_result()

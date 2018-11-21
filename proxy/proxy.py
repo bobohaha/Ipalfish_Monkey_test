@@ -59,7 +59,8 @@ class proxy:
         _MonkeyApkTester.install_downloaded_test_apk()
         _MonkeyApkTester.run_test()
 
-        self._rst = True
+        self._rst = _MonkeyApkTester.get_rst()
+        LogUtil.log("Monkey Test Result: " + str(self._rst))
 
         LogUtil.log_end("Monkey Test")
 
