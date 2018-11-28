@@ -1,19 +1,17 @@
-from proxy.usb.UsbUtil import UsbUtil
-from proxy.utils.LogUtil import LogUtil
-from proxy.utils.PathUtil import PathUtil
-from proxy.utils.ADBUtil import ADBUtil
-from proxy.utils.PropUtil import PropUtil
-
-from proxy.utils.KillProcessUtil import KillProcessUtil
-from proxy.monkeyTest import xlsxwriter
-from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
-from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyTestApkLocalName
-from proxy import param
-
 import os
 import re
-
 from time import sleep, time
+
+from proxy import param
+from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
+from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyTestApkLocalName
+import xlsxwriter
+from proxy.usb.UsbUtil import UsbUtil
+from proxy.utils.ADBUtil import ADBUtil
+from proxy.utils.KillProcessUtil import KillProcessUtil
+from proxy.utils.LogUtil import LogUtil
+from proxy.utils.PathUtil import PathUtil
+from proxy.utils.PropUtil import PropUtil
 
 
 class MonkeyApkTester:

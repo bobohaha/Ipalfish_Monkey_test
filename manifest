@@ -7,7 +7,7 @@
 "description":"Monkey loog",
 "necessary":"true"},
 {"name":"MONKEY_ROUND_MAXIMUM_TIME",
-"value":"3",
+"value":"1",
 "description":"Monkey time per loop",
 "necessary":"true"},
 {"name":"MONKEY_SEED",

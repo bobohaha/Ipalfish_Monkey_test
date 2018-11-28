@@ -1,6 +1,11 @@
-from fds import FDSClientConfiguration, GalaxyFDSClient, GalaxyFDSClientException
 import os
 import time
+from proxy.utils.DependenciesUtil import DependenciesUtil
+try:
+    from fds import FDSClientConfiguration, GalaxyFDSClient, GalaxyFDSClientException
+except:
+    DependenciesUtil.install_dependencies()
+    from fds import FDSClientConfiguration, GalaxyFDSClient, GalaxyFDSClientException
 
 
 class FdsUtil:
