@@ -16,7 +16,6 @@ class ADBUtil:
         LogUtil.log_start("reboot_to_bootloader")
 
         command = "adb -s " + serial + " reboot bootloader"
-        LogUtil.log(command)
         os.system(command)
 
         LogUtil.log_end("reboot_to_bootloader")
@@ -26,7 +25,6 @@ class ADBUtil:
         LogUtil.log_start("reboot")
 
         command = "adb -s " + serial + " reboot"
-        LogUtil.log(command)
         os.system(command)
 
         LogUtil.log_end("reboot")
@@ -159,3 +157,34 @@ class ADBUtil:
             else:
                 print "boot not completed wait,after five seconds check"
                 time.sleep(5)
+
+    @staticmethod
+    def wait_and_check_is_in_oobe(serial):
+        wait_time = 1 * 60
+        while wait_time > 0:
+            result = ADBUtil.is_in_oobe(serial)
+            if result:
+                return result
+            else:
+                wait_time_gap = 5
+                time.sleep(wait_time_gap)
+                wait_time -= wait_time_gap
+        return False
+
+    @staticmethod
+    def is_in_oobe(serial, package=None):
+        if package is not None:
+            command = "adb -s " + serial \
+                      + " shell dumpsys window | grep mFocusedApp | grep -v AppWindowToken | grep " + package
+            std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                                     stderr=subprocess.PIPE).communicate()
+            if std_result is not None and len(std_result) != 0:
+                print std_result
+                return True
+            else:
+                print std_result, std_error
+                return False
+
+        in_miui_oobe = ADBUtil.is_in_oobe(serial, package="com.android.provision")
+        in_google_oobe = ADBUtil.is_in_oobe(serial, package="com.google.android.setupwizard")
+        return in_miui_oobe or in_google_oobe

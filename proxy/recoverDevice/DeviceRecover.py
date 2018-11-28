@@ -20,19 +20,22 @@ class DeviceRecover:
         self._device_serial = serial
         pass
 
+    def wait_for_device_ready(self):
+        ADBUtil.wait_for_device(self._device_serial)
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+        ADBUtil.wait_for_reboot_complete(self._device_serial)
+
     def reboot_device(self):
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.reboot(self._device_serial)
-        ADBUtil.wait_for_device(self._device_serial)
-        ADBUtil.wait_for_reboot_complete(self._device_serial)
+        self.wait_for_device_ready()
         pass
 
     def download_install_apk_and_make_sure_usb(self):
         self.download_or_upgrade_apk()
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         self.install_downloaded_apk()
-        ADBUtil.wait_for_device(self._device_serial)
-        ADBUtil.wait_for_reboot_complete(self._device_serial)
+        self.wait_for_device_ready()
         pass
 
     def download_or_upgrade_apk(self):
@@ -68,11 +71,28 @@ class DeviceRecover:
 
     def recover_device(self):
         LogUtil.log_start("recover_device")
-        self.reboot_device()
+        MAX_ROUND_COUNT = 3
+        for _ in range(0, MAX_ROUND_COUNT):
 
-        if self.is_sysopt_version_new():
-            ADBUtil.broadcast_action(self._device_serial, self.RECOVER_BROADCAST_ACTION)
-        else:
-            self.download_install_apk_and_make_sure_usb()
-            self.recover_device()
+            if self.rst is False:
+                self.reboot_device()
+                self.rst = None
+
+            if self.rst is None:
+                self.do_recover_device()
+
+            if self.rst is True:
+                break
         LogUtil.log_end("recover_device")
+
+    def do_recover_device(self):
+        LogUtil.log_start("do_recover_device")
+        if not self.is_sysopt_version_new():
+            self.download_install_apk_and_make_sure_usb()
+        ADBUtil.broadcast_action(self._device_serial, self.RECOVER_BROADCAST_ACTION)
+        self.wait_for_device_ready()
+        self.rst = not self.is_sysopt_version_new() and ADBUtil.wait_and_check_is_in_oobe(self._device_serial)
+        LogUtil.log_end("do_recover_device")
+
+    def get_result(self):
+        return self.rst

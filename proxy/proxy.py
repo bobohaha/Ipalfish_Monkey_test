@@ -22,11 +22,13 @@ class proxy:
         LogUtil.log_start("Recovery Devices for Monkey Test")
         _DeviceRecover = DeviceRecover(self._run._serial)
         _DeviceRecover.recover_device()
+        if _DeviceRecover.get_result() is False:
+            LogUtil.log_end("Recovery Devices fail")
+            return
         LogUtil.log_end("Recovery Devices for Monkey Test")
 
         LogUtil.log_start("Skip OOBE for Monkey Test")
         test_region_language = {}
-
         _SkipOOBE = SkipOOBE(self._run._serial,
                              self._run._out_path,
                              self._run._param_dict,
@@ -37,7 +39,6 @@ class proxy:
         _SkipOOBE.run_test()
         _SkipOOBE.analyze_result()
         _SkipOOBE.move_result()
-
         if _SkipOOBE.get_result() is False:
             LogUtil.log_end("_SkipOOBE fail")
             return
@@ -53,7 +54,6 @@ class proxy:
         LogUtil.log_end("Presetting for Monkey Test")
 
         LogUtil.log_start("Monkey Test")
-
         _MonkeyApkTester = MonkeyApkTester(self._run._serial,
                                            self._run._out_path,
                                            self._run._param_dict)
@@ -63,8 +63,8 @@ class proxy:
 
         self._rst = _MonkeyApkTester.get_rst()
         LogUtil.log("Monkey Test Result: " + str(self._rst))
-
         LogUtil.log_end("Monkey Test")
+        LogUtil.log_end("doScript")
 
     def get_result(self):
         return self._rst

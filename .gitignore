@@ -1,3 +1,7 @@
 *.iml
 /.idea/*.xml
 *.pyc
+/proxy/preSetting/PreSetter/*
+/proxy/recoverDevice/recoverDevice/*
+/proxy/skipOOBE/SkipOOBE/*
+/proxy/usb/ResetUsb/*
