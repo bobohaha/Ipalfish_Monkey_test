@@ -2,10 +2,15 @@ import os
 import re
 from time import sleep, time
 
+try:
+    import xlsxwriter
+except:
+    os.system("pip install XlsxWriter")
+    import xlsxwriter
+
 from proxy import param
 from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
 from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyTestApkLocalName
-import xlsxwriter
 from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
 from proxy.utils.KillProcessUtil import KillProcessUtil
