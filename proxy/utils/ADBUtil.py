@@ -188,3 +188,19 @@ class ADBUtil:
         in_miui_oobe = ADBUtil.is_in_oobe(serial, package="com.android.provision")
         in_google_oobe = ADBUtil.is_in_oobe(serial, package="com.google.android.setupwizard")
         return in_miui_oobe or in_google_oobe
+
+    @staticmethod
+    def wait_for_enter_system(serial):
+        command = "adb -s " + serial \
+                  + " shell dumpsys window | grep mFocusedApp | grep -v AppWindowToken"
+
+        while True:
+            std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                                     stderr=subprocess.PIPE).communicate()
+            if std_result is not None and len(std_result) != 0 \
+                    and "mFocusedApp=null" not in std_result:
+                print "std_result: " + std_result
+                return True
+            else:
+                print "std_result: " + str(std_result), "std_error: " + str(std_error)
+                time.sleep(5)

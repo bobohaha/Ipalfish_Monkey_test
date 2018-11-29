@@ -89,7 +89,9 @@ class MonkeyApkTester:
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.reboot(self._device_serial)
         ADBUtil.wait_for_device(self._device_serial)
+        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.wait_for_reboot_complete(self._device_serial)
+        ADBUtil.wait_for_enter_system(self._device_serial)
         pass
 
     def clear_log_folder(self):
@@ -127,9 +129,7 @@ class MonkeyApkTester:
 
     def test(self, round_index):
         LogUtil.log_start("test: " + str(round_index))
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         self.reboot_device()
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
 
         self.run_monkey_in_background()
         running_time = self.hold_for_monkey_run_time()
@@ -137,9 +137,7 @@ class MonkeyApkTester:
 
         self.pull_log(round_index)
         self.analyze_log(round_index, running_time)
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         self.reboot_device()
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         LogUtil.log_end("test: " + str(round_index))
 
     def kill_monkey(self):
@@ -151,7 +149,6 @@ class MonkeyApkTester:
         LogUtil.log_end("kill_monkey")
 
     def run_monkey_in_background(self):
-
         LogUtil.log_start("run_monkey_in_background")
 
         input_package_name = self._rom_info["PACKAGE_NAME"]
@@ -164,7 +161,6 @@ class MonkeyApkTester:
             package_name_str = package_name_str + "-p" + " " + package_name + " "
 
         self._log_file_name = "_" + str(time())
-
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
 
         command = "adb -s " + self._device_serial + " shell monkey " \
@@ -273,7 +269,7 @@ class MonkeyApkTester:
     def get_seed(self):
         seed_str = self._rom_info["MONKEY_SEED"]
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
-        if seed_str is not None and seed_str != "":
+        if seed_str is not None and seed_str != "" and seed_str != "None":
             return seed_str
         elif self._log_file_name != "" and os.path.exists(log_file_full_path):
             log_file = open(log_file_full_path, 'r')
