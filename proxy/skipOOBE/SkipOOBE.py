@@ -100,10 +100,10 @@ class SkipOOBE:
     def install_downloaded_apk(self):
         LogUtil.log_start("install_downloaded_apk")
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-        ADBUtil.install(self._device_serial, "./app-debug.apk")
-        ADBUtil.install(self._device_serial, "./app-debug-androidTest.apk")
+        self.rst = ADBUtil.try_install(self._device_serial, "./app-debug.apk")
+        if self.rst:
+            self.rst = ADBUtil.try_install(self._device_serial, "./app-debug-androidTest.apk")
         LogUtil.log_end("install_downloaded_apk")
-        pass
 
     def download_or_upgrade_apk(self):
         LogUtil.log_start("download_or_upgrade_apk")
@@ -122,19 +122,17 @@ class SkipOOBE:
 
     def run_test(self):
         LogUtil.log_start("run_test")
-
-        MAX_ROUND_COUNT = 3
-        for _ in range(0, MAX_ROUND_COUNT):
-
+        self.rst = None
+        run_count_remain = 3
+        while run_count_remain > 0:
             if self.rst is None:
                 UsbUtil.make_sure_usb_connected(self._device_serial, "0")
                 self.run_android_junit_runner()
+                run_count_remain -= 1
             else:
                 break
-
             self.analyze_result()
-
-        LogUtil.log_start("run_test")
+        LogUtil.log_end("run_test")
 
     def move_result(self):
         LogUtil.log_start("move_result")

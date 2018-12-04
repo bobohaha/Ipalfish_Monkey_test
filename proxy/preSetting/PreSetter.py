@@ -33,16 +33,14 @@ class PreSetter:
     def install_downloaded_apk(self):
         LogUtil.log_start("install_downloaded_apk")
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-        ADBUtil.install(
-            self._device_serial, "./app-debug.apk")
-        ADBUtil.install(
-            self._device_serial, "./app-debug-androidTest.apk")
+        self.rst = ADBUtil.try_install(self._device_serial, "./app-debug.apk")
+        if self.rst:
+            self.rst = ADBUtil.try_install(self._device_serial, "./app-debug-androidTest.apk")
         LogUtil.log_end("install_downloaded_apk")
         pass
 
     def download_or_upgrade_apk(self):
         LogUtil.log_start("download_or_upgrade_apk")
-
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
         if not os.path.exists(PreSetter.PROJECT_NAME):
@@ -57,7 +55,7 @@ class PreSetter:
 
     def run_presetting(self):
         LogUtil.log_start("run_presetting")
-
+        self.rst = None
         MAX_ROUND_COUNT = 3
         for _ in range(0, MAX_ROUND_COUNT):
 
@@ -99,7 +97,6 @@ class PreSetter:
             LogUtil.log("Presetting run  unfinished")
 
     def get_result(self):
-
         if self.rst is None:
             return False
 

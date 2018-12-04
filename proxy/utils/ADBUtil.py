@@ -41,12 +41,28 @@ class ADBUtil:
         output = os.popen(command)
         text = output.read().strip()
 
-        if text.endswith("Success"):
+        _rst = None
+
+        if "Success" in text:
             print "%s install success" % apk_path
+            _rst = True
         else:
             print "%s install failure" % apk_path
+            _rst = False
 
         LogUtil.log_end("install")
+        return _rst
+
+    @staticmethod
+    def try_install(serial, apk_path):
+        try_time = 3
+        while try_time > 0:
+            install_rst = ADBUtil.install(serial, apk_path)
+            if install_rst:
+                return True
+            else:
+                try_time -= 1
+        return False
 
     @staticmethod
     def set_adb_install_enable(serial):

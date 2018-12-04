@@ -41,6 +41,7 @@ class MonkeyApkTester:
     _rom_info = None
     _rom_version = ""
     _device_name = ""
+    _is_auto_test = False
 
     results = {}
     bugs = {}
@@ -55,6 +56,13 @@ class MonkeyApkTester:
         self._device_serial = serial
         self._log_out_path = out_path
         self._rom_info = param_dict
+        self._is_auto_test = True if self._rom_info[param.TEST_APK_BUILD_VERSION] != "None" else False
+        self._seed = None
+        self._seed_specify = param_dict["MONKEY_SEED"] if 'MONKEY_SEED' in param_dict.keys() \
+                                                          and param_dict['MONKEY_SEED'] is not None \
+                                                          and param_dict['MONKEY_SEED'] != "None" \
+                                                          and param_dict['MONKEY_SEED'] != "" \
+                                                          and param_dict['MONKEY_SEED'] != " " else None
         self.clear_log_folder()
         self._device_name = PropUtil.get_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
@@ -62,6 +70,8 @@ class MonkeyApkTester:
         pass
 
     def download_test_apk(self):
+        if not self._is_auto_test:
+            return
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
         self._MonkeyApkSyncUtil.\
@@ -69,19 +79,16 @@ class MonkeyApkTester:
     pass
 
     def install_downloaded_test_apk(self):
+        if not self._is_auto_test:
+            return
         LogUtil.log_start("install_test_apk")
         self.install_apk(MonkeyTestApkLocalName)
-        LogUtil.log_end("install_test_apk")
-
-    def install_test_apk(self):
-        LogUtil.log_start("install_test_apk")
-        self.install_apk(self._rom_info[param.TEST_APK])
         LogUtil.log_end("install_test_apk")
 
     def install_apk(self, apk_file_path):
         LogUtil.log_start("install_apk")
         UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-        ADBUtil.install(
+        self._rst = ADBUtil.try_install(
             self._device_serial, apk_file_path)
         LogUtil.log_end("install_apk")
 
@@ -130,6 +137,7 @@ class MonkeyApkTester:
     def test(self, round_index):
         LogUtil.log_start("test: " + str(round_index))
         self.reboot_device()
+        self.clear_device_log()
 
         self.run_monkey_in_background()
         running_time = self.hold_for_monkey_run_time()
@@ -166,9 +174,9 @@ class MonkeyApkTester:
         command = "adb -s " + self._device_serial + " shell monkey " \
                   + monkey_param + " " + package_name_str
 
-        seed_str = self.get_seed()
-        if seed_str is not None:
-            command = command + "-s " + seed_str + " "
+        self.get_seed()
+        if self._seed is not None:
+            command = command + "-s " + self._seed + " "
 
         command = command + "50000000 > " + log_file_full_path + " & "
 
@@ -233,9 +241,7 @@ class MonkeyApkTester:
         pass
 
     def analyze_log(self, round_index, running_time):
-
-        seed_str = self.get_seed()
-
+        self.get_seed()
         command = "ls " + MonkeyApkTester.OUTPUT_CRASH_PATH + "round_" + str(
             round_index) + "/app_crash*"
         output = os.popen(command)
@@ -263,21 +269,22 @@ class MonkeyApkTester:
         running_sec = running_time % 60
         running_str = str(running_min) + " min + " + str(running_sec) + " sec."
 
-        self.results[round_index] = {"seed": seed_str, "times": running_str,
+        self.results[round_index] = {"seed": self._seed, "times": running_str,
                                      "crash": crash_str, "anr": anr_str}
 
     def get_seed(self):
-        seed_str = self._rom_info["MONKEY_SEED"]
+        if self._seed_specify is not None:
+            self._seed = self._seed_specify
+            return
+
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
-        if seed_str is not None and seed_str != "" and seed_str != "None":
-            return seed_str
-        elif self._log_file_name != "" and os.path.exists(log_file_full_path):
+        if self._log_file_name != "" and os.path.exists(log_file_full_path):
             log_file = open(log_file_full_path, 'r')
             for line in log_file:
                 if ":Monkey:" in line:
-                    return line.split("seed=")[1].split(" ")[0]
+                    self._seed = line.split("seed=")[1].split(" ")[0]
         else:
-            return None
+            self._seed = None
 
     def write_excel(self):
 
@@ -396,6 +403,7 @@ class MonkeyApkTester:
         result = ""
         for filename in bug_files:
             if filename:
+
                 if self.BUG_TYPE_CRASH == bug_type:
                     bug = self.get_crash_info(filename)
                 elif self.BUG_TYPE_ANR == bug_type:
@@ -420,3 +428,7 @@ class MonkeyApkTester:
 
     def analyze_result(self):
         self._rst = len(self.bugs) == 0
+
+    def clear_device_log(self):
+        ADBUtil.rm(self._device_serial, MonkeyApkTester.DEVICE_OUTPUT_PATH)
+        pass

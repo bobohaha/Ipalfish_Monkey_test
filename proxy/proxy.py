@@ -36,6 +36,9 @@ class proxy:
         _SkipOOBE.download_or_upgrade_apk()
         _SkipOOBE.make_sure_in_oobe()
         _SkipOOBE.install_downloaded_apk()
+        if _SkipOOBE.get_result() is False:
+            LogUtil.log_end("_SkipOOBE fail: install skipOOBE.apk error")
+            return
         _SkipOOBE.run_test()
         _SkipOOBE.analyze_result()
         _SkipOOBE.move_result()
@@ -50,7 +53,13 @@ class proxy:
                                self._run._param_dict[param.PACKAGE_NAME])
         _PreSetter.download_or_upgrade_apk()
         _PreSetter.install_downloaded_apk()
+        if _PreSetter.get_result() is False:
+            LogUtil.log_end("PreSetting error: install presetting apk error!")
+            return
         _PreSetter.run_presetting()
+        if _PreSetter.get_result() is False:
+            LogUtil.log_end("PreSetting error!")
+            return
         LogUtil.log_end("Presetting for Monkey Test")
 
         LogUtil.log_start("Monkey Test")
@@ -59,6 +68,9 @@ class proxy:
                                            self._run._param_dict)
         _MonkeyApkTester.download_test_apk()
         _MonkeyApkTester.install_downloaded_test_apk()
+        if _MonkeyApkTester.get_rst() is False:
+            LogUtil.log_end("Monkey Test fail: install test apk of test package error")
+            return
         _MonkeyApkTester.run_test()
 
         self._rst = _MonkeyApkTester.get_rst()
