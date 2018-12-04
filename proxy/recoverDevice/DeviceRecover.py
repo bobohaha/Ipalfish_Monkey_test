@@ -92,7 +92,7 @@ class DeviceRecover:
             self.download_install_apk_and_make_sure_usb()
         ADBUtil.broadcast_action(self._device_serial, self.RECOVER_BROADCAST_ACTION)
         self.wait_for_device_ready()
-        self.rst = not self.is_sysopt_version_new() and ADBUtil.wait_and_check_is_in_oobe(self._device_serial)
+        self.rst = ADBUtil.wait_and_check_is_in_oobe(self._device_serial)
         LogUtil.log_end("do_recover_device")
 
     def get_result(self):

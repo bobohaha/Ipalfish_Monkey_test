@@ -192,7 +192,7 @@ class ADBUtil:
     @staticmethod
     def wait_for_enter_system(serial):
         command = "adb -s " + serial \
-                  + " shell dumpsys window | grep mFocusedApp | grep -v AppWindowToken"
+                  + " shell dumpsys window | grep mFocusedApp"
 
         while True:
             std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
