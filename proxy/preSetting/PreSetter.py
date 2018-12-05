@@ -66,6 +66,7 @@ class PreSetter:
                 break
 
             self.analyze_result()
+            self.move_result()
 
         LogUtil.log_start("run_presetting")
 
@@ -97,9 +98,6 @@ class PreSetter:
             LogUtil.log("Presetting run  unfinished")
 
     def get_result(self):
-        if self.rst is None:
-            return False
-
         return self.rst
 
     def get_class_name(self):
@@ -117,3 +115,26 @@ class PreSetter:
                                                       self.rstFileName)
 
         pass
+
+    def move_result(self):
+        LogUtil.log_start("move_result")
+
+        command = "adb -s " + self._device_serial + " root"
+        os.system(command)
+        print command
+
+        command = "mkdir -p " + self._log_out_path + "/com.mi.globalAutoTestTool.sanityCheck/cache"
+        print command
+        os.system(command)
+
+        command = "adb -s " + self._device_serial + " pull /data/user/0/com.mi.globalAutoTestTool" \
+                                                    ".sanityCheck/cache/ " \
+                  + self._log_out_path + "/com.mi.globalAutoTestTool.sanityCheck/"
+        print command
+        os.system(command)
+
+        LogUtil.log_end("move_result")
+
+    def clear_pkg_cache_in_device(self):
+        package_name = PreSetter.PRESETTING_PKG.split(".test")[0]
+        ADBUtil.clear_pkg_cache(self._device_serial, package_name)

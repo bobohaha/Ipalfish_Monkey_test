@@ -45,6 +45,7 @@ class proxy:
         if _SkipOOBE.get_result() is False:
             LogUtil.log_end("_SkipOOBE fail")
             return
+        _SkipOOBE.clear_pkg_cache_in_device()
         LogUtil.log_end("Skip OOBE for Monkey Test")
 
         LogUtil.log_start("Presetting for Monkey Test")
@@ -60,6 +61,7 @@ class proxy:
         if _PreSetter.get_result() is False:
             LogUtil.log_end("PreSetting error!")
             return
+        _PreSetter.clear_pkg_cache_in_device()
         LogUtil.log_end("Presetting for Monkey Test")
 
         LogUtil.log_start("Monkey Test")

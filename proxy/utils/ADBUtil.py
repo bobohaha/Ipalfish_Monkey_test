@@ -116,6 +116,12 @@ class ADBUtil:
         os.system(command)
 
     @staticmethod
+    def clear_pkg_cache(serial, pkg):
+        command = "adb -s " + serial + " shell pm clear " + pkg
+        print command
+        os.system(command)
+
+    @staticmethod
     def mkdir_p(serial, device_path):
         command = "adb -s " + serial + " shell mkdir -p " + device_path
         print command

@@ -50,7 +50,7 @@ class MonkeyApkTester:
 
     _MonkeyApkSyncUtil = None
 
-    _rst = False
+    _rst = None
 
     def __init__(self, serial, out_path, param_dict):
         self._device_serial = serial
@@ -120,7 +120,7 @@ class MonkeyApkTester:
 
     def run_test(self):
         LogUtil.log_start("run_test")
-
+        self._rst = False
         round_str = self._rom_info["MONKEY_ROUND"]
 
         round_count = int(round_str)

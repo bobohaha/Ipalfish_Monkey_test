@@ -215,3 +215,7 @@ class SkipOOBE:
                                                                        self._extra_params)
 
         pass
+
+    def clear_pkg_cache_in_device(self):
+        package_name = self.SKIPOOBE_PKG.split(".test")[0]
+        ADBUtil.clear_pkg_cache(self._device_serial, package_name)
