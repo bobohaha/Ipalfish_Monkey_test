@@ -36,14 +36,12 @@ class ADBUtil:
         if not ADBUtil.check_adb_install_enable(serial):
             ADBUtil.set_adb_install_enable(serial)
 
-        command = "adb -s " + serial + " install -r -d " + apk_path + " & "
+        command = "adb -s " + serial + " install -r -d " + apk_path
+        std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE).communicate()
+        print "std_result: " + std_result, "std_error: " + std_error
 
-        output = os.popen(command)
-        text = output.read().strip()
-
-        _rst = None
-
-        if "Success" in text:
+        if "success" in std_result.lower() or "success" in std_error.lower():
             print "%s install success" % apk_path
             _rst = True
         else:
