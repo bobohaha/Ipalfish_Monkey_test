@@ -68,6 +68,8 @@ class PreSetter:
             self.analyze_result()
             self.move_result()
 
+        if self.rst is None:
+            self.rst = False
         LogUtil.log_start("run_presetting")
 
     def analyze_result(self):

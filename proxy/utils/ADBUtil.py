@@ -12,6 +12,13 @@ class ADBUtil:
     CURRENT_PATH = PathUtil.get_file_path(__file__)
 
     @staticmethod
+    def root_and_remount(serial):
+        command = "adb -s " + serial + " root"
+        os.system(command)
+        command = "adb -s " + serial + " remount"
+        os.system(command)
+
+    @staticmethod
     def reboot_to_bootloader(serial):
         LogUtil.log_start("reboot_to_bootloader")
 
@@ -224,3 +231,17 @@ class ADBUtil:
             else:
                 print "std_result: " + str(std_result), "std_error: " + str(std_error)
                 time.sleep(5)
+
+    @staticmethod
+    def power_on(serial):
+        command = "adb -s " + serial + " shell input keyevent 224"
+        os.system(command)
+
+    @staticmethod
+    def take_screenshot(serial, out_put_file_path):
+        ADBUtil.power_on(serial)
+        ADBUtil.root_and_remount(serial)
+        command = "adb -s " + serial + " shell screencap -p " + out_put_file_path
+        print command
+        result = os.popen(command)
+        print result.read().strip()

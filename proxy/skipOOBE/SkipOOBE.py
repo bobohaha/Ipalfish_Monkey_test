@@ -1,3 +1,7 @@
+from time import time
+import os
+import re
+
 from proxy.utils.PathUtil import PathUtil
 from proxy.utils.GitUtil import GitUtil
 from proxy.utils.GradleUtil import GradleUtil
@@ -8,9 +12,6 @@ from proxy import param
 from proxy.utils.AndroidJUnitRunnerUtil import AndroidJUnitRunnerUtil
 from SkipOOBEApkSyncUtil import SkipOOBEApkSyncUtil
 from proxy.utils.PropUtil import PropUtil
-
-import os
-import re
 
 
 class SkipOOBE:
@@ -132,6 +133,10 @@ class SkipOOBE:
             else:
                 break
             self.analyze_result()
+            if not self.get_result():
+                LogUtil.log("take screenshot >>>>>>>>>>>>>>>>>>>>>>>")
+                self.take_screenshot()
+                LogUtil.log("take screenshot <<<<<<<<<<<<<<<<<<<<<<<")
         LogUtil.log_end("run_test")
 
     def move_result(self):
@@ -219,3 +224,8 @@ class SkipOOBE:
     def clear_pkg_cache_in_device(self):
         package_name = self.SKIPOOBE_PKG.split(".test")[0]
         ADBUtil.clear_pkg_cache(self._device_serial, package_name)
+
+    def take_screenshot(self):
+        screenshot_file_path = "/data/user/0/com.mi.globalAutoTestTool" \
+                               ".skipOOBE/cache/skipOOBE_" + str(time()) + ".png"
+        ADBUtil.take_screenshot(self._device_serial, screenshot_file_path)
