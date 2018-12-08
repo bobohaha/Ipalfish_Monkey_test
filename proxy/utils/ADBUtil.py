@@ -72,25 +72,16 @@ class ADBUtil:
     @staticmethod
     def set_adb_install_enable(serial):
         LogUtil.log_start("set_adb_install_enable")
-
-        command = "adb -s " + serial + " shell settings put global verifier_verify_adb_installs 0"
-        LogUtil.log(command)
-        os.system(command)
-
+        command = "put global verifier_verify_adb_installs 0"
+        ADBUtil.execute_shell(serial, command)
         LogUtil.log_end("set_adb_install_enable")
 
     @staticmethod
     def check_adb_install_enable(serial):
         LogUtil.log_start("check_adb_install_enable")
-
-        command = "adb -s " + serial + " shell settings get global verifier_verify_adb_installs"
-
-        output = os.popen(command)
-        text = output.read().strip()
-
-        LogUtil.log("check_adb_install_enable: " + text)
-
-        if text.endswith("0"):
+        command = "settings get global verifier_verify_adb_installs"
+        std_result, std_error = ADBUtil.execute_shell(serial, command, True)
+        if "0" in std_result:
             LogUtil.log_end("check_adb_install_enable: True")
             return True
         else:
@@ -106,9 +97,8 @@ class ADBUtil:
 
     @staticmethod
     def move(serial, device_path, local_path):
-        command = "adb -s " + serial + " shell mv " + device_path + " " + local_path
-        print command
-        os.system(command)
+        command = "mv " + device_path + " " + local_path
+        ADBUtil.execute_shell(serial, command)
 
     @staticmethod
     def pull(serial, device_path, local_path):
@@ -117,44 +107,48 @@ class ADBUtil:
         os.system(command)
 
     @staticmethod
-    def rm(serial, device_path):
-        command = "adb -s " + serial + " shell rm -rf " + device_path
+    def push(serial, local_path, device_path="/sdcard"):
+        command = "adb -s " + serial + " push " + local_path + " " + device_path
         print command
         os.system(command)
+
+    @staticmethod
+    def rm(serial, device_path):
+        command = "rm -rf " + device_path
+        ADBUtil.execute_shell(serial, command)
 
     @staticmethod
     def clear_pkg_cache(serial, pkg):
-        command = "adb -s " + serial + " shell pm clear " + pkg
-        print command
-        os.system(command)
+        command = "pm clear " + pkg
+        ADBUtil.execute_shell(serial, command)
 
     @staticmethod
     def mkdir_p(serial, device_path):
-        command = "adb -s " + serial + " shell mkdir -p " + device_path
-        print command
-        os.system(command)
+        command = "mkdir -p " + device_path
+        ADBUtil.execute_shell(serial, command)
 
     @staticmethod
     def get_prop(serial, prop):
-        command = "adb -s " + serial + " shell getprop " + prop
-        print command
-        std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                                 stderr=subprocess.PIPE).communicate()
+        command = "getprop " + prop
+        std_result, std_error = ADBUtil.execute_shell(serial, command, True)
         if std_result is not None:
             return std_result.strip()
         else:
             return std_error.strip()
 
     @staticmethod
+    def set_prop(serial, prop, value):
+        command = "setprop " + prop + value
+        ADBUtil.execute_shell(serial, command)
+
+    @staticmethod
     def get_installed_package_version(serial, package_name):
-        command = "adb -s " + serial + " shell dumpsys package " + package_name \
+        command = "dumpsys package " + package_name \
                   + " | grep versionCode " \
                     "| awk -F' '  '{print $1}' " \
                     "| awk -F'=' '{print $2}' " \
                     "| awk '{if($1>1) {print $1}}'"
-        print command
-        std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                                 stderr=subprocess.PIPE).communicate()
+        std_result, std_error = ADBUtil.execute_shell(serial, command, True)
         if std_result is not None:
             return std_result.strip()
         else:
@@ -163,8 +157,8 @@ class ADBUtil:
     @staticmethod
     def broadcast_action(serial, action_name):
         LogUtil.log_start("broadcast_action: " + action_name)
-        command = "adb -s " + serial + " shell am broadcast -a " + action_name
-        os.system(command)
+        command = "am broadcast -a " + action_name
+        ADBUtil.execute_shell(serial, command)
         LogUtil.log_end("broadcast_action: " + action_name)
 
     @staticmethod
@@ -201,15 +195,11 @@ class ADBUtil:
     @staticmethod
     def is_in_oobe(serial, package=None):
         if package is not None:
-            command = "adb -s " + serial \
-                      + " shell dumpsys window | grep mFocusedApp | grep -v AppWindowToken | grep " + package
-            std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                                     stderr=subprocess.PIPE).communicate()
+            command = "dumpsys window | grep mFocusedApp | grep -v AppWindowToken | grep " + package
+            std_result, std_error = ADBUtil.execute_shell(serial, command, True)
             if std_result is not None and len(std_result) != 0:
-                print std_result
                 return True
             else:
-                print std_result, std_error
                 return False
 
         in_miui_oobe = ADBUtil.is_in_oobe(serial, package="com.android.provision")
@@ -218,30 +208,36 @@ class ADBUtil:
 
     @staticmethod
     def wait_for_enter_system(serial):
-        command = "adb -s " + serial \
-                  + " shell dumpsys window | grep mFocusedApp"
-
+        command = "dumpsys window | grep mFocusedApp"
         while True:
-            std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                                     stderr=subprocess.PIPE).communicate()
+            std_result, std_error = ADBUtil.execute_shell(serial, command, True)
             if std_result is not None and len(std_result) != 0 \
                     and "mFocusedApp=null" not in std_result:
-                print "std_result: " + std_result
                 return True
             else:
-                print "std_result: " + str(std_result), "std_error: " + str(std_error)
                 time.sleep(5)
 
     @staticmethod
     def power_on(serial):
-        command = "adb -s " + serial + " shell input keyevent 224"
-        os.system(command)
+        command = "input keyevent 224"
+        ADBUtil.execute_shell(serial, command)
 
     @staticmethod
     def take_screenshot(serial, out_put_file_path):
         ADBUtil.power_on(serial)
         ADBUtil.root_and_remount(serial)
-        command = "adb -s " + serial + " shell screencap -p " + out_put_file_path
-        print command
-        result = os.popen(command)
-        print result.read().strip()
+        command = "screencap -p " + out_put_file_path
+        ADBUtil.execute_shell(serial, command, True)
+
+    @staticmethod
+    def execute_shell(serial, shell_command, output=False):
+        command = "adb -s " + serial + " shell " + shell_command
+        print(command)
+        if output is False:
+            os.system(command)
+            return
+        else:
+            std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                                     stderr=subprocess.PIPE).communicate()
+            print "std_result: " + str(std_result), "std_error: " + str(std_error)
+            return std_result, std_error

@@ -18,6 +18,7 @@ class DeviceRecover:
 
     def __init__(self, serial):
         self._device_serial = serial
+        self.sysopt_online_version = SysoptApkSyncUtil().get_object_newest_version_online()
         pass
 
     def wait_for_device_ready(self):
@@ -49,8 +50,8 @@ class DeviceRecover:
 
         _PathUtil.chdir(DeviceRecover.PROJECT_NAME)
 
-        online_version, local_version = SysoptApkSyncUtil().download_newest_version_objects()
-        LogUtil.log("online_version: " + str(online_version))
+        self.sysopt_online_version, local_version = SysoptApkSyncUtil().download_newest_version_objects()
+        LogUtil.log("online_version: " + str(self.sysopt_online_version))
         LogUtil.log("local_version: " + str(local_version))
         LogUtil.log_end("download_or_upgrade_apk")
 
@@ -61,19 +62,17 @@ class DeviceRecover:
         LogUtil.log_end("install_downloaded_apk")
         pass
 
-    def is_sysopt_version_new(self):
+    def is_sysopt_version_newest(self):
         current_version = ADBUtil.get_installed_package_version(self._device_serial,
                                                                 SYSOPT_PACKAGE_NAME)
         LogUtil.log("check_sysopt_version::current: " + current_version)
         if current_version is None or current_version == "":
             return False
+        return int(current_version.strip()) == self.sysopt_online_version
 
-        return int(current_version.strip()) > SYSOPT_ORIGION_VERSION
-
-    def recover_device(self):
+    def recover_device(self, max_try=3):
         LogUtil.log_start("recover_device")
-        MAX_ROUND_COUNT = 3
-        for _ in range(0, MAX_ROUND_COUNT):
+        for _ in range(0, max_try):
 
             if self.rst is False:
                 self.reboot_device()
@@ -88,7 +87,7 @@ class DeviceRecover:
 
     def do_recover_device(self):
         LogUtil.log_start("do_recover_device")
-        if not self.is_sysopt_version_new():
+        if not self.is_sysopt_version_newest():
             self.download_install_apk_and_make_sure_usb()
         ADBUtil.broadcast_action(self._device_serial, self.RECOVER_BROADCAST_ACTION)
         self.wait_for_device_ready()
