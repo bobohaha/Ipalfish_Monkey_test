@@ -107,8 +107,11 @@ class ADBUtil:
         os.system(command)
 
     @staticmethod
-    def push(serial, local_path, device_path="/sdcard"):
+    def push(serial, local_path, device_path="/sdcard", quiet=True):
+        ADBUtil.mkdir_p(serial, device_path)
         command = "adb -s " + serial + " push " + local_path + " " + device_path
+        if quiet:
+            command += " 2>&1 >/dev/null"
         print command
         os.system(command)
 
@@ -138,7 +141,7 @@ class ADBUtil:
 
     @staticmethod
     def set_prop(serial, prop, value):
-        command = "setprop " + prop + value
+        command = "setprop " + prop + " " + value
         ADBUtil.execute_shell(serial, command)
 
     @staticmethod

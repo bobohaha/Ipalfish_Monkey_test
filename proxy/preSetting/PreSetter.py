@@ -1,7 +1,10 @@
+# coding=utf-8
+
 from proxy.utils.PathUtil import PathUtil
 from proxy.utils.LogUtil import LogUtil
 from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
+from proxy.utils.ShellUtil import ShellUtil
 from proxy.param import *
 from proxy.params.CaseName import *
 from proxy.utils.AndroidJUnitRunnerUtil import AndroidJUnitRunnerUtil
@@ -9,6 +12,9 @@ from PreSettingApkSyncUtil import *
 from LocalResourcesSyncUtil import *
 
 import os
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 class PreSetter:
@@ -19,6 +25,11 @@ class PreSetter:
 
     rst = None
     rstFileName = "PreSetter.txt"
+    monkey_resource_path = "/monkey_test_resources"
+    usr_home = os.path.expanduser('~')
+    device_home = "/sdcard"
+    resource_pc_path = usr_home + monkey_resource_path
+    resource_device_path = device_home + monkey_resource_path
 
     def __init__(self, serial, out_path, package_name):
         self._device_serial = serial
@@ -48,7 +59,7 @@ class PreSetter:
         LogUtil.log("local_version: " + str(local_version))
         LogUtil.log_end("download_or_upgrade_apk")
 
-    def run_presetting(self):
+    def run_presetting_ui(self):
         LogUtil.log_start("run_presetting")
         preset_classes = self.get_preset_classes()
         for class_name in preset_classes:
@@ -69,29 +80,64 @@ class PreSetter:
                 return method
             else:
                 print(package + " no specific setting!!")
+                return None
+        else:
+            need_local_resource = False
+            for package_name in self._package_name_arr:
+                method = self.run_specific_set(package_name)
+                if method is not None:
+                    method()
+
+                if package_name in PACKAGE_NEED_LOCAL_RESOURCE:
+                    need_local_resource = True
+
+            if need_local_resource:
+                self.download_and_push_resources()
+            else:
+                print str(self._package_name_arr) + " not need local resources"
         pass
 
     def download_and_push_resources(self):
-        usr_home = os.path.expanduser('~')
-        resource_path = usr_home + "/monkey_test_resources/"
-        if not os.path.exists(resource_path):
-            os.mkdir(resource_path)
+        LogUtil.log_start("download_and_push_resources")
+        self.download_resources()
+        self.fix_resource_name()
+        self.push_resources()
+        LogUtil.log_end("download_and_push_resources")
 
-        files_num = len([x for x in os.listdir(resource_path) if os.path.isfile(x)])
-        if files_num <= LOCAL_RESOURCES_NUMBER:
-            LocalResourcesSyncUtil().download_objects_in_bucket_root(resource_path)
+    def download_resources(self):
+        if not os.path.exists(self.resource_pc_path):
+            os.mkdir(self.resource_pc_path)
 
-        for f in os.listdir(resource_path):
-            if os.path.isfile(f):
-                print f
-                # ADBUtil.push(self._device_serial, f)
+        files_num = len([x for (_, _, files) in os.walk(self.resource_pc_path) for x in files])
+        print "resource_files_num: " + str(files_num)
+        if files_num != LOCAL_RESOURCES_NUMBER:
+            os.system('rm -rf ' + self.resource_pc_path)
+            os.mkdir(self.resource_pc_path)
+            LocalResourcesSyncUtil().download_objects_in_bucket_root(self.resource_pc_path)
+
+    def fix_resource_name(self):
+        unexpected_name_substring = [" ", "-", "\(", "\)", "（", "）", "《", "》","\&"]
+        target_substring = '_'
+        for sub in unexpected_name_substring:
+            ShellUtil.rename_sub_string(sub, target_substring, self.resource_pc_path, "*")
+
+    def push_resources(self):
+        ADBUtil.rm(self._device_serial, self.resource_device_path)
+        for (root, _, files) in os.walk(self.resource_pc_path):
+            if not root.endswith("/"):
+                root += "/"
+
+            for f in files:
+                file_path = root + f
+                ADBUtil.push(self._device_serial, file_path, self.resource_device_path)
 
     def music_specific_set(self):
+        LogUtil.log_start("music_specific_set")
         ADBUtil.root_and_remount(self._device_serial)
         ADBUtil.execute_shell(self._device_serial, "touch sdcard/Download/global_music_ind")
         ADBUtil.set_prop(self._device_serial, "log.tag.MediaPlaybackServicePro", "V")
         ADBUtil.set_prop(self._device_serial, "log.tag.AsyncServiceProxy", "V")
-        pass
+        LogUtil.log_end("music_specific_set")
 
     def remove_accounts(self):
         self.run_android_junit_runner(REMOVE_ACCOUNT)

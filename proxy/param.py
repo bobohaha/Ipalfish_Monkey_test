@@ -37,3 +37,9 @@ PRESETTING_DEFAULT_CASE_NAME = CaseName.COMMON_PRESETTING
 # Case list on different package
 PRESETTING_CASE_PACKAGE = {PackageName.GAME_CENTER: CaseName.GAME_CENTER_PRESETTING,
                            PackageName.MUSIC: CaseName.MUSIC_PRESETTING}
+
+# Package need local resource
+PACKAGE_NEED_LOCAL_RESOURCE = [PackageName.MUSIC,
+                               PackageName.MiDrop,
+                               PackageName.GlobalFileExplorer,
+                               PackageName.FunnyPuriVideo]
