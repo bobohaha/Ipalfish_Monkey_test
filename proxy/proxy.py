@@ -16,26 +16,29 @@ class proxy:
         DependenciesUtil.install_dependencies()
         self._run = run
         self._MonkeyApkTester = None
+        self._PreSetter = None
 
     def do_script(self):
         LogUtil.log_start("doScript")
         self.recover_device()
-        if not self.get_result():
+        if self.get_result() is False:
             return
 
         self.skip_oobe()
-        if not self.get_result():
+        if self.get_result() is False:
             return
 
         self.install_test_apk()
-        if not self.get_result():
+        if self.get_result() is False:
             return
 
         self.pre_setting()
-        if not self.get_result():
+        if self.get_result() is False:
             return
 
         self.run_monkey_test()
+
+        self.remove_accounts()
         LogUtil.log_end("doScript")
 
     def recover_device(self):
@@ -70,24 +73,24 @@ class proxy:
 
     def pre_setting(self):
         LogUtil.log_start("Presetting for Monkey Test")
-        _PreSetter = PreSetter(self._run._serial,
-                               self._run._out_path,
-                               self._run._param_dict[param.PACKAGE_NAME])
-        _PreSetter.run_specific_set()
-
-        _PreSetter.download_or_upgrade_apk()
-        _PreSetter.install_downloaded_apk()
-        self._rst = _PreSetter.get_result()
+        if self._PreSetter is None:
+            self._PreSetter = PreSetter(self._run._serial,
+                                        self._run._out_path,
+                                        self._run._param_dict[param.PACKAGE_NAME])
+        self._PreSetter.download_or_upgrade_apk()
+        self._PreSetter.install_downloaded_apk()
+        self._rst = self._PreSetter.get_result()
         if self._rst is False:
             LogUtil.log_end("Presetting for Monkey Test: Failed: install presetting apk error!")
             return
 
-        _PreSetter.run_presetting_ui()
-        self._rst = _PreSetter.get_result()
+        self._PreSetter.run_presetting_ui()
+        self._rst = self._PreSetter.get_result()
         if self._rst is False:
             LogUtil.log_end("Presetting for Monkey Test: Failed: PreSetting error!")
             return
-        _PreSetter.clear_pkg_cache_in_device()
+        self._PreSetter.clear_pkg_cache_in_device()
+        self._PreSetter.run_specific_set()
         LogUtil.log_end("Presetting for Monkey Test")
 
     def install_test_apk(self):
@@ -99,7 +102,7 @@ class proxy:
         self._MonkeyApkTester.download_test_apk()
         self._MonkeyApkTester.install_downloaded_test_apk()
         self._rst = self._MonkeyApkTester.get_rst()
-        LogUtil.log_end("install_test_apk: " + self._rst)
+        LogUtil.log_end("install_test_apk: " + str(self._rst))
 
     def run_monkey_test(self):
         LogUtil.log_start("Monkey Test")
@@ -111,6 +114,16 @@ class proxy:
         self._rst = self._MonkeyApkTester.get_rst()
         LogUtil.log("Monkey Test Result: " + str(self._rst))
         LogUtil.log_end("Monkey Test")
+
+    def remove_accounts(self):
+        LogUtil.log_start("remove_accounts")
+        if self._PreSetter is None:
+            self._PreSetter = PreSetter(self._run._serial,
+                                        self._run._out_path,
+                                        self._run._param_dict[param.PACKAGE_NAME])
+        self._PreSetter.remove_accounts()
+        LogUtil.log_end("remove_accounts")
+        pass
 
     def get_result(self):
         return self._rst

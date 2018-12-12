@@ -5,6 +5,7 @@ from proxy.utils.LogUtil import LogUtil
 from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
 from proxy.utils.ShellUtil import ShellUtil
+from proxy.utils.KillProcessUtil import KillProcessUtil
 from proxy.param import *
 from proxy.params.CaseName import *
 from proxy.utils.AndroidJUnitRunnerUtil import AndroidJUnitRunnerUtil
@@ -61,6 +62,7 @@ class PreSetter:
 
     def run_presetting_ui(self):
         LogUtil.log_start("run_presetting")
+        self.disable_inputs()
         preset_classes = self.get_preset_classes()
         for class_name in preset_classes:
             class_name = self.PRESETTING_CLASS + class_name
@@ -73,7 +75,8 @@ class PreSetter:
     def run_specific_set(self, package=None):
         if package is not None:
             specific_settings = {
-                PackageName.MUSIC: "music_specific_set"
+                PackageName.MUSIC: "music_specific_set",
+                PackageName.GlobalMIUIHome: "global_launcher_specific_set"
             }
             if package in specific_settings.keys():
                 method = getattr(self, specific_settings[package])
@@ -83,6 +86,7 @@ class PreSetter:
                 return None
         else:
             need_local_resource = False
+            need_local_image = False
             for package_name in self._package_name_arr:
                 method = self.run_specific_set(package_name)
                 if method is not None:
@@ -91,10 +95,18 @@ class PreSetter:
                 if package_name in PACKAGE_NEED_LOCAL_RESOURCE:
                     need_local_resource = True
 
+                if package_name in PACKAGE_NEED_LOCAL_IMAGE:
+                    need_local_image = True
+
             if need_local_resource:
                 self.download_and_push_resources()
             else:
                 print str(self._package_name_arr) + " not need local resources"
+
+            if need_local_image:
+                self.take_screenshots(100)
+            else:
+                print str(self._package_name_arr) + " not need local images"
         pass
 
     def download_and_push_resources(self):
@@ -131,6 +143,16 @@ class PreSetter:
                 file_path = root + f
                 ADBUtil.push(self._device_serial, file_path, self.resource_device_path)
 
+    def install_all_apk_resources(self):
+        for (root, _, files) in os.walk(self.resource_pc_path):
+            if not root.endswith("/"):
+                root += "/"
+
+            for f in files:
+                if f.endswith(".apk"):
+                    file_path = root + f
+                    ADBUtil.try_install(self._device_serial, file_path)
+
     def music_specific_set(self):
         LogUtil.log_start("music_specific_set")
         ADBUtil.root_and_remount(self._device_serial)
@@ -138,6 +160,12 @@ class PreSetter:
         ADBUtil.set_prop(self._device_serial, "log.tag.MediaPlaybackServicePro", "V")
         ADBUtil.set_prop(self._device_serial, "log.tag.AsyncServiceProxy", "V")
         LogUtil.log_end("music_specific_set")
+
+    def global_launcher_specific_set(self):
+        self.download_resources()
+        self.fix_resource_name()
+        self.install_all_apk_resources()
+        pass
 
     def remove_accounts(self):
         self.run_android_junit_runner(REMOVE_ACCOUNT)
@@ -158,13 +186,15 @@ class PreSetter:
         for _ in range(0, max_try):
             if rst is None:
                 UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+                KillProcessUtil.kill_device_process(self._device_serial, self.PRESETTING_PKG.strip(".test"))
                 AndroidJUnitRunnerUtil.run_adb_command_output(self._device_serial,
                                                               class_name,
                                                               self.PRESETTING_PKG,
                                                               self.rstFileName)
-            else:
+            elif rst is True:
                 break
             rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
+            print(str(_), "Test result: ", str(rst))
         if rst is None:
             rst = False
         return rst
@@ -191,3 +221,16 @@ class PreSetter:
     def clear_pkg_cache_in_device(self):
         package_name = PreSetter.PRESETTING_PKG.split(".test")[0]
         ADBUtil.clear_pkg_cache(self._device_serial, package_name)
+
+    def take_screenshots(self, image_num):
+        ADBUtil.mkdir_p(self._device_serial, self.resource_device_path)
+        for index in range(0, image_num):
+            file_path = self.resource_device_path + "/_" + str(index) + ".png"
+            ADBUtil.take_screenshot(self._device_serial, file_path)
+        pass
+
+    def disable_inputs(self):
+        ADBUtil.root_and_remount(self._device_serial)
+        ADBUtil.execute_shell(self._device_serial, "pm disable com.google.android.inputmethod.latin")
+        ADBUtil.execute_shell(self._device_serial, "pm disable com.kikaoem.xiaomi.qisiemoji.inputmethod")
+        pass

@@ -72,7 +72,7 @@ class ADBUtil:
     @staticmethod
     def set_adb_install_enable(serial):
         LogUtil.log_start("set_adb_install_enable")
-        command = "put global verifier_verify_adb_installs 0"
+        command = "settings put global verifier_verify_adb_installs 0"
         ADBUtil.execute_shell(serial, command)
         LogUtil.log_end("set_adb_install_enable")
 
@@ -244,3 +244,11 @@ class ADBUtil:
                                                      stderr=subprocess.PIPE).communicate()
             print "std_result: " + str(std_result), "std_error: " + str(std_error)
             return std_result, std_error
+
+    @staticmethod
+    def silence_and_disable_notification_in_device(serial):
+        ADBUtil.root_and_remount(serial)
+        ADBUtil.execute_shell(serial, "settings put global policy_control immersive.full=*")
+        ADBUtil.execute_shell(serial, "pm disable com.android.systemui")
+        ADBUtil.execute_shell(serial, "input keyevent 164")
+        pass

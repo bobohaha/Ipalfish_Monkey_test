@@ -138,6 +138,7 @@ class MonkeyApkTester:
         LogUtil.log_start("test: " + str(round_index))
         self.reboot_device()
         self.clear_device_log()
+        ADBUtil.silence_and_disable_notification_in_device(self._device_serial)
 
         self.run_monkey_in_background()
         running_time = self.hold_for_monkey_run_time()

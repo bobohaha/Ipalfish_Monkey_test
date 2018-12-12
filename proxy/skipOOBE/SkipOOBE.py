@@ -1,6 +1,5 @@
 from time import time
 import os
-import re
 
 from proxy.utils.PathUtil import PathUtil
 from proxy.utils.GitUtil import GitUtil
@@ -8,6 +7,7 @@ from proxy.utils.GradleUtil import GradleUtil
 from proxy.utils.LogUtil import LogUtil
 from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
+from proxy.utils.KillProcessUtil import KillProcessUtil
 from proxy import param
 from proxy.utils.AndroidJUnitRunnerUtil import AndroidJUnitRunnerUtil
 from SkipOOBEApkSyncUtil import SkipOOBEApkSyncUtil
@@ -174,19 +174,20 @@ class SkipOOBE:
     def run_android_junit_runner(self, max_try = 3):
         rst = None
         for _ in range(0, max_try):
-            if self.rst is None:
+            if rst is None:
                 UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+                KillProcessUtil.kill_device_process(self._device_serial, self.SKIPOOBE_PKG.strip(".test"))
                 AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
                                                                                self.SKIPOOBE_CLASS,
                                                                                self.SKIPOOBE_PKG,
                                                                                self.rstFileName,
                                                                                self._extra_params)
-            else:
+            elif rst is True:
                 break
             rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
             if rst is not True:
                 self.take_screenshot()
-
+            print(str(_), "Test result: ", str(rst))
         if rst is None:
             rst = False
         return rst
