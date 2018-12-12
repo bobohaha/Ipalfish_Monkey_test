@@ -1,6 +1,5 @@
 from time import time
 import os
-import re
 
 from proxy.utils.PathUtil import PathUtil
 from proxy.utils.GitUtil import GitUtil
@@ -8,6 +7,7 @@ from proxy.utils.GradleUtil import GradleUtil
 from proxy.utils.LogUtil import LogUtil
 from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
+from proxy.utils.KillProcessUtil import KillProcessUtil
 from proxy import param
 from proxy.utils.AndroidJUnitRunnerUtil import AndroidJUnitRunnerUtil
 from SkipOOBEApkSyncUtil import SkipOOBEApkSyncUtil
@@ -37,6 +37,7 @@ class SkipOOBE:
         self._rom_info = param_dict
         self._extra_params = test_region_language
         self._device_name = PropUtil.get_device_name(serial)
+        self.update_extra_params()
         pass
 
     def generate_and_install_apk(self):
@@ -121,23 +122,11 @@ class SkipOOBE:
         LogUtil.log("local_version: " + str(local_version))
         LogUtil.log_end("download_or_upgrade_apk")
 
-    def run_test(self):
-        LogUtil.log_start("run_test")
-        self.rst = None
-        run_count_remain = 3
-        while run_count_remain > 0:
-            if self.rst is None:
-                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-                self.run_android_junit_runner()
-                run_count_remain -= 1
-            else:
-                break
-            self.analyze_result()
-            if not self.get_result():
-                LogUtil.log("take screenshot >>>>>>>>>>>>>>>>>>>>>>>")
-                self.take_screenshot()
-                LogUtil.log("take screenshot <<<<<<<<<<<<<<<<<<<<<<<")
-        LogUtil.log_end("run_test")
+    def run_skip_oobe(self):
+        LogUtil.log_start("run_skip_oobe")
+        self.rst = self.run_android_junit_runner()
+        self.move_result()
+        LogUtil.log_end("run_skip_oobe")
 
     def move_result(self):
         LogUtil.log_start("move_result")
@@ -158,38 +147,7 @@ class SkipOOBE:
 
         LogUtil.log_end("move_result")
 
-    def analyze_result(self):
-        LogUtil.log("analyze_result")
-
-        _PathUtil = PathUtil(__file__)
-        _PathUtil.chdir_here()
-        _PathUtil.chdir(SkipOOBE.PROJECT_NAME)
-
-        if os.path.exists("%s" % self.rstFileName) is False:
-            LogUtil.log("file isn't exist.")
-            return None
-
-        for line in open("%s" % self.rstFileName, 'r'):
-            LogUtil.log(line)
-
-            if re.search("Failure", line):
-                LogUtil.log("skipOOBE run failure")
-                self.rst = False
-                break
-
-            if re.search("OK ", line):
-                LogUtil.log("skipOOBE run OK")
-                self.rst = True
-                break
-
-        if self.rst is None:
-            LogUtil.log("skipOOBE run  unfinished")
-
     def get_result(self):
-
-        if self.rst is None:
-            return False
-
         return self.rst
 
     def make_sure_in_oobe(self):
@@ -207,19 +165,32 @@ class SkipOOBE:
             _PathUtil.chdir(SkipOOBE.PROJECT_NAME)
         pass
 
-    def run_android_junit_runner(self):
+    def update_extra_params(self):
         if self._device_name in param.NEED_CONNECT_WIFI_DEVICE:
             self._extra_params.setdefault(param.IS_NEED_CONNECT_WIFI_KEY,
                                           param.IS_NEED_CONNECT_WIFI_VALUE)
             LogUtil.log("skipOOBE: " + self._device_name + " need connect wifi")
 
-        AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
-                                                                       self.SKIPOOBE_CLASS,
-                                                                       self.SKIPOOBE_PKG,
-                                                                       self.rstFileName,
-                                                                       self._extra_params)
-
-        pass
+    def run_android_junit_runner(self, max_try = 3):
+        rst = None
+        for _ in range(0, max_try):
+            if rst is None:
+                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+                KillProcessUtil.kill_device_process(self._device_serial, self.SKIPOOBE_PKG.strip(".test"))
+                AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
+                                                                               self.SKIPOOBE_CLASS,
+                                                                               self.SKIPOOBE_PKG,
+                                                                               self.rstFileName,
+                                                                               self._extra_params)
+            elif rst is True:
+                break
+            rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
+            if rst is not True:
+                self.take_screenshot()
+            print(str(_), "Test result: ", str(rst))
+        if rst is None:
+            rst = False
+        return rst
 
     def clear_pkg_cache_in_device(self):
         package_name = self.SKIPOOBE_PKG.split(".test")[0]

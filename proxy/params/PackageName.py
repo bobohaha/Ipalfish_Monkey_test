@@ -1,3 +1,9 @@
 # Package list
 GAME_CENTER = "com.xiaomi.glgm"
 MUSIC = "com.miui.player"
+MiDrop = "com.xiaomi.midrop"
+Browser = "com.android.browser"
+GlobalFileExplorer = "com.mi.android.globalFileexplorer"
+GlobalMIUIHome = "com.mi.android.globallauncher"
+PersonalAssistant = "com.mi.android.globalpersonalassistant"
+FunnyPuriVideo = "com.funnypuri.client"

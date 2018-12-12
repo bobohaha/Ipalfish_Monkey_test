@@ -1,5 +1,7 @@
 import os
 
+from proxy.utils.PathUtil import PathUtil
+
 
 class AndroidJUnitRunnerUtil:
     def __init__(self):
@@ -56,3 +58,27 @@ class AndroidJUnitRunnerUtil:
                                                                           extra_param_dict)
         command = command + " | tee " + file_name
         os.system(command)
+
+    @staticmethod
+    def analysis_instrument_run_result(file_name):
+        rst = None
+
+        if os.path.exists("%s" % file_name) is False:
+            print("file isn't exist.")
+            return rst
+
+        for line in open("%s" % file_name, 'r'):
+            if "Failure" in line:
+                print("Instrument run failure")
+                rst = False
+                break
+
+            if "OK " in line:
+                print("Instrument run OK")
+                rst = True
+                break
+
+        if rst is None:
+            print("Instrument run  unfinished")
+
+        return rst

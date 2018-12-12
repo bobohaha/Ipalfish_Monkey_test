@@ -138,6 +138,7 @@ class MonkeyApkTester:
         LogUtil.log_start("test: " + str(round_index))
         self.reboot_device()
         self.clear_device_log()
+        ADBUtil.silence_and_disable_notification_in_device(self._device_serial)
 
         self.run_monkey_in_background()
         running_time = self.hold_for_monkey_run_time()
@@ -166,7 +167,7 @@ class MonkeyApkTester:
         package_name_str = ""
 
         for package_name in package_name_ary:
-            package_name_str = package_name_str + "-p" + " " + package_name + " "
+            package_name_str = package_name_str + "-p " + package_name + " "
 
         self._log_file_name = "_" + str(time())
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
