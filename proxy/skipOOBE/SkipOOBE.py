@@ -177,6 +177,7 @@ class SkipOOBE:
             if rst is None:
                 UsbUtil.make_sure_usb_connected(self._device_serial, "0")
                 KillProcessUtil.kill_device_process(self._device_serial, self.SKIPOOBE_PKG.strip(".test"))
+                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
                 AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
                                                                                self.SKIPOOBE_CLASS,
                                                                                self.SKIPOOBE_PKG,

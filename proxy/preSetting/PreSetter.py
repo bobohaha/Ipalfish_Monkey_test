@@ -187,6 +187,7 @@ class PreSetter:
             if rst is None:
                 UsbUtil.make_sure_usb_connected(self._device_serial, "0")
                 KillProcessUtil.kill_device_process(self._device_serial, self.PRESETTING_PKG.strip(".test"))
+                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
                 AndroidJUnitRunnerUtil.run_adb_command_output(self._device_serial,
                                                               class_name,
                                                               self.PRESETTING_PKG,
