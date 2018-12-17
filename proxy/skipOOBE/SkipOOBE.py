@@ -1,4 +1,4 @@
-from time import time
+import time
 import os
 
 from proxy.utils.PathUtil import PathUtil
@@ -171,7 +171,7 @@ class SkipOOBE:
                                           param.IS_NEED_CONNECT_WIFI_VALUE)
             LogUtil.log("skipOOBE: " + self._device_name + " need connect wifi")
 
-    def run_android_junit_runner(self, max_try = 3):
+    def run_android_junit_runner(self, max_try=3):
         rst = None
         for _ in range(0, max_try):
             if rst is None:
@@ -189,6 +189,7 @@ class SkipOOBE:
             if rst is not True:
                 self.take_screenshot()
             print(str(_), "Test result: ", str(rst))
+            time.sleep(10)
         if rst is None:
             rst = False
         return rst
@@ -199,5 +200,5 @@ class SkipOOBE:
 
     def take_screenshot(self):
         screenshot_file_path = "/data/user/0/com.mi.globalAutoTestTool" \
-                               ".skipOOBE/cache/skipOOBE_" + str(time()) + ".png"
+                               ".skipOOBE/cache/skipOOBE_" + str(time.time()) + ".png"
         ADBUtil.take_screenshot(self._device_serial, screenshot_file_path)

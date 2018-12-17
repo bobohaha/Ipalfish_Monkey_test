@@ -14,6 +14,7 @@ from LocalResourcesSyncUtil import *
 
 import os
 import sys
+import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -195,6 +196,7 @@ class PreSetter:
                 break
             rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
             print(str(_), "Test result: ", str(rst))
+            time.sleep(10)
         if rst is None:
             rst = False
         return rst
