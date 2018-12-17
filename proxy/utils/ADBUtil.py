@@ -1,6 +1,7 @@
 import os
 from proxy.utils.LogUtil import LogUtil
 from proxy.utils.PathUtil import PathUtil
+from proxy.usb.UsbUtil import UsbUtil
 import subprocess
 import time
 
@@ -39,10 +40,10 @@ class ADBUtil:
     @staticmethod
     def install(serial, apk_path):
         LogUtil.log_start("install")
-
+        UsbUtil.make_sure_usb_connected(serial, "0")
         if not ADBUtil.check_adb_install_enable(serial):
             ADBUtil.set_adb_install_enable(serial)
-
+        UsbUtil.make_sure_usb_connected(serial, "0")
         command = "adb -s " + serial + " install -r -d " + apk_path
         std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                                  stderr=subprocess.PIPE).communicate()

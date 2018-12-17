@@ -40,7 +40,6 @@ class PreSetter:
 
     def install_downloaded_apk(self):
         LogUtil.log_start("install_downloaded_apk")
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         self.rst = ADBUtil.try_install(self._device_serial, "./app-debug.apk")
         if self.rst:
             self.rst = ADBUtil.try_install(self._device_serial, "./app-debug-androidTest.apk")
