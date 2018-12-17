@@ -234,6 +234,13 @@ class ADBUtil:
         ADBUtil.execute_shell(serial, command, True)
 
     @staticmethod
+    def take_ui_layout(serial, out_put_file_path):
+        ADBUtil.power_on(serial)
+        ADBUtil.root_and_remount(serial)
+        command = "uiautomator dump " + out_put_file_path
+        ADBUtil.execute_shell(serial, command, True)
+
+    @staticmethod
     def execute_shell(serial, shell_command, output=False):
         command = "adb -s " + serial + " shell " + shell_command
         print(command)

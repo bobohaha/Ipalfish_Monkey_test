@@ -184,19 +184,20 @@ class PreSetter:
     def run_android_junit_runner(self, class_name, max_try=3):
         rst = None
         for _ in range(0, max_try):
-            if rst is None:
-                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-                KillProcessUtil.kill_device_process(self._device_serial, self.PRESETTING_PKG.strip(".test"))
-                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-                AndroidJUnitRunnerUtil.run_adb_command_output(self._device_serial,
-                                                              class_name,
-                                                              self.PRESETTING_PKG,
-                                                              self.rstFileName)
-            elif rst is True:
-                break
+            UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+            KillProcessUtil.kill_device_process(self._device_serial, self.PRESETTING_PKG.strip(".test"))
+            UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+            AndroidJUnitRunnerUtil.run_adb_command_output(self._device_serial,
+                                                          class_name,
+                                                          self.PRESETTING_PKG,
+                                                          self.rstFileName)
             rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
             print(str(_), "Test result: ", str(rst))
-            time.sleep(10)
+            if rst is True:
+                break
+            else:
+                self.take_screenshot()
+                time.sleep(10)
         if rst is None:
             rst = False
         return rst
@@ -236,3 +237,10 @@ class PreSetter:
         ADBUtil.execute_shell(self._device_serial, "pm disable com.google.android.inputmethod.latin")
         ADBUtil.execute_shell(self._device_serial, "pm disable com.kikaoem.xiaomi.qisiemoji.inputmethod")
         pass
+
+    def take_screenshot(self):
+        screenshot_file_path = "/data/user/0/" + self.PRESETTING_PKG.strip(".test") + "/cache/" \
+                               + self.PROJECT_NAME + "_" + str(time.time()) + ".png"
+        layout_file = screenshot_file_path.replace(".png", ".uix")
+        ADBUtil.take_screenshot(self._device_serial, screenshot_file_path)
+        ADBUtil.take_ui_layout(self._device_serial, layout_file)

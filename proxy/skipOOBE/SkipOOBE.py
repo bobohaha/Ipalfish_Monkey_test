@@ -174,22 +174,21 @@ class SkipOOBE:
     def run_android_junit_runner(self, max_try=3):
         rst = None
         for _ in range(0, max_try):
-            if rst is None:
-                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-                KillProcessUtil.kill_device_process(self._device_serial, self.SKIPOOBE_PKG.strip(".test"))
-                UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-                AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
-                                                                               self.SKIPOOBE_CLASS,
-                                                                               self.SKIPOOBE_PKG,
-                                                                               self.rstFileName,
-                                                                               self._extra_params)
-            elif rst is True:
-                break
+            UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+            KillProcessUtil.kill_device_process(self._device_serial, self.SKIPOOBE_PKG.strip(".test"))
+            UsbUtil.make_sure_usb_connected(self._device_serial, "0")
+            AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
+                                                                           self.SKIPOOBE_CLASS,
+                                                                           self.SKIPOOBE_PKG,
+                                                                           self.rstFileName,
+                                                                           self._extra_params)
             rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
-            if rst is not True:
-                self.take_screenshot()
             print(str(_), "Test result: ", str(rst))
-            time.sleep(10)
+            if rst is True:
+                break
+            else:
+                self.take_screenshot()
+                time.sleep(10)
         if rst is None:
             rst = False
         return rst
@@ -199,6 +198,8 @@ class SkipOOBE:
         ADBUtil.clear_pkg_cache(self._device_serial, package_name)
 
     def take_screenshot(self):
-        screenshot_file_path = "/data/user/0/com.mi.globalAutoTestTool" \
-                               ".skipOOBE/cache/skipOOBE_" + str(time.time()) + ".png"
+        screenshot_file_path = "/data/user/0/" + self.SKIPOOBE_PKG.strip(".test") + "/cache/" \
+                               + self.PROJECT_NAME + "_" + str(time.time()) + ".png"
+        layout_file = screenshot_file_path.replace(".png", ".uix")
         ADBUtil.take_screenshot(self._device_serial, screenshot_file_path)
+        ADBUtil.take_ui_layout(self._device_serial, layout_file)
