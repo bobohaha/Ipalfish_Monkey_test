@@ -1,6 +1,6 @@
 from proxy.utils.ObjectSyncUtil import ObjectSyncUtil
 
-IS_TEST_ENV = True
+IS_TEST_ENV = False
 SYSOPT_DOWNLOAD_BUCKET = "sysopt"
 SYSOPT_APK_NAME = "SYSOPT.apk"
 SYSOPT_APK_NAME_KEYWORD = "release"

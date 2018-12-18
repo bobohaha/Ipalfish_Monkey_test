@@ -66,7 +66,7 @@ class MonkeyApkTester:
         self.clear_log_folder()
         self._device_name = PropUtil.get_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
-        self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._rom_info[param.PACKAGE_NAME].lower())
+        self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._rom_info[param.PACKAGE_NAME].lower().replace(",", "-"))
         pass
 
     def download_test_apk(self):
