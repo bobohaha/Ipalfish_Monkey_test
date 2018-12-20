@@ -58,5 +58,9 @@ class ObjectSyncUtil(FdsUtil):
         command = "aapt d badging " + file + " | grep 'pack' | cut -f3 -d' ' | cut -f2 -d'='"
 
         out_put = os.popen(command)
-        out_put_version = out_put.read().split("'")[1].strip()
-        return int(out_put_version)
+        try:
+            out_put_version = out_put.read().split("'")[1].strip()
+            return int(out_put_version)
+        except:
+            print(out_put.read())
+            return 0
