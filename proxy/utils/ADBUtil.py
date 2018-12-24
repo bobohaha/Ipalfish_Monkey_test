@@ -161,7 +161,8 @@ class ADBUtil:
     @staticmethod
     def broadcast_action(serial, action_name):
         LogUtil.log_start("broadcast_action: " + action_name)
-        command = "am broadcast -a " + action_name
+        flag = "0x01000000"
+        command = "am broadcast -a " + action_name + " -f " + flag
         ADBUtil.execute_shell(serial, command)
         LogUtil.log_end("broadcast_action: " + action_name)
 
