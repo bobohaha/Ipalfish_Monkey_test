@@ -264,10 +264,17 @@ class ADBUtil:
 
     @staticmethod
     def get_process_id_by_name(serial, process_name):
-        command = "ps -A | grep -i " + process_name + " | cut -d ' ' -f 2-11"
+        command = "ps -A | grep -i " + process_name + " | awk -F' ' '{ print $2 }'"
+        command_1 = "ps | grep " + process_name + " | awk -F' ' '{ print $2 }'"
         std_out, std_err = ADBUtil.execute_shell(serial, command, True)
+        std_out_1, std_err_1 = ADBUtil.execute_shell(serial, command_1, True)
         if std_out is not None and len(std_out) != 0:
-            print "process name: " + process_name + " | process id: " + std_out
+            std_out = std_out.split("\n")
+            print "process name: " + process_name + " | process id: " + str(std_out)
             return std_out
+        elif std_out_1 is not None and len(std_out_1) != 0:
+            std_out_1 = std_out_1.split("\n")
+            print "1 process name: " + process_name + " | process id: " + str(std_out_1)
+            return std_out_1
         else:
             return None
