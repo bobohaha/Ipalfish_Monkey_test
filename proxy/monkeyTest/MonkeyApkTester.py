@@ -42,6 +42,7 @@ class MonkeyApkTester:
     _rom_version = ""
     _device_name = ""
     _is_auto_test = False
+    _monkey_command = ""
 
     results = {}
     bugs = {}
@@ -72,18 +73,19 @@ class MonkeyApkTester:
     def download_test_apk(self):
         if not self._is_auto_test:
             return
+        LogUtil.log_start("download_test_apk")
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
         self._MonkeyApkSyncUtil.\
             download_objects_with_version(self._rom_info[param.TEST_APK_BUILD_VERSION])
-    pass
+        LogUtil.log_end("download_test_apk")
 
     def install_downloaded_test_apk(self):
         if not self._is_auto_test:
             return
-        LogUtil.log_start("install_test_apk")
+        LogUtil.log_start("install_downloaded_test_apk")
         self.install_apk(MonkeyTestApkLocalName)
-        LogUtil.log_end("install_test_apk")
+        LogUtil.log_end("install_downloaded_test_apk")
 
     def install_apk(self, apk_file_path):
         LogUtil.log_start("install_apk")
@@ -140,6 +142,7 @@ class MonkeyApkTester:
         self.clear_device_log()
         ADBUtil.silence_and_disable_notification_in_device(self._device_serial)
 
+        self.init_monkey_command()
         self.run_monkey_in_background()
         running_time = self.hold_for_monkey_run_time()
         self.kill_monkey()
@@ -157,9 +160,8 @@ class MonkeyApkTester:
 
         LogUtil.log_end("kill_monkey")
 
-    def run_monkey_in_background(self):
-        LogUtil.log_start("run_monkey_in_background")
-
+    def init_monkey_command(self):
+        LogUtil.log_start("init_monkey_command")
         input_package_name = self._rom_info["PACKAGE_NAME"]
         monkey_param = self._rom_info["MONKEY_PARAM"]
 
@@ -180,9 +182,15 @@ class MonkeyApkTester:
             command = command + "-s " + self._seed + " "
 
         command = command + "50000000 > " + log_file_full_path + " & "
+        self._monkey_command = command
+        LogUtil.log("monkey command: " + self._monkey_command)
+        LogUtil.log_end("init_monkey_command")
 
-        LogUtil.log(command)
-        os.system(command)
+    def run_monkey_in_background(self):
+        LogUtil.log_start("run_monkey_in_background")
+
+        UsbUtil.make_sure_usb_connected(self._device_serial)
+        os.system(self._monkey_command)
 
         LogUtil.log_end("run_monkey_in_background")
 
@@ -200,6 +208,8 @@ class MonkeyApkTester:
         while time() - start_time < monkey_max_time:
             LogUtil.log("hold_for_monkey_run_time(): " + str(time()))
             sleep(MonkeyApkTester.MONKEY_CHECK_INTERVAL_SECOND)
+            if ADBUtil.get_process_id_by_name(self._device_serial, "monkey") is None:
+                self.run_monkey_in_background()
 
         end_time = time()
 

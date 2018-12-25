@@ -261,3 +261,13 @@ class ADBUtil:
         ADBUtil.execute_shell(serial, "pm disable com.android.systemui")
         ADBUtil.execute_shell(serial, "input keyevent 164")
         pass
+
+    @staticmethod
+    def get_process_id_by_name(serial, process_name):
+        command = "ps -A | grep -i " + process_name + " | cut -d ' ' -f 2-11"
+        std_out, std_err = ADBUtil.execute_shell(serial, command, True)
+        if std_out is not None and len(std_out) != 0:
+            print "process name: " + process_name + " | process id: " + std_out
+            return std_out
+        else:
+            return None

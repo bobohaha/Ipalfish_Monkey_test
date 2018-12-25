@@ -14,7 +14,7 @@ class UsbUtil:
         pass
 
     @staticmethod
-    def make_sure_usb_connected(serial, wait_time):
+    def make_sure_usb_connected(serial, wait_time="0"):
         LogUtil.log_start("waitForAdbConnected")
 
         _PathUtil = PathUtil(__file__)
