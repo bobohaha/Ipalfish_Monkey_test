@@ -1,6 +1,8 @@
 import os
 import time
+
 from proxy.utils.DependenciesUtil import DependenciesUtil
+
 try:
     from fds import FDSClientConfiguration, GalaxyFDSClient, GalaxyFDSClientException
 except:
@@ -72,7 +74,7 @@ class FdsUtil:
 
             path = fds_obj_version.split("/")
 
-            fds_obj_version = path[len(path)-2].strip()
+            fds_obj_version = path[len(path) - 2].strip()
             version.append(int(fds_obj_version))
 
         return version
@@ -111,7 +113,7 @@ class FdsUtil:
         if _has_dir_obj:
             objects_num = objects_num + 1
 
-        if download_objects_num != objects_num:
+        if download_objects_num > objects_num:
             raise Exception("The num of objects online is error")
 
         if not os.path.exists(file_download_path):

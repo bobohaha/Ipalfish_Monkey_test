@@ -1,10 +1,10 @@
-from utils.LogUtil import LogUtil
-from utils.DependenciesUtil import DependenciesUtil
-from skipOOBE.SkipOOBE import SkipOOBE
-from recoverDevice.DeviceRecover import DeviceRecover
-from preSetting.PreSetter import PreSetter
-from monkeyTest.MonkeyApkTester import MonkeyApkTester
 import param
+from monkeyTest.MonkeyApkTester import MonkeyApkTester
+from preSetting.PreSetter import PreSetter
+from recoverDevice.DeviceRecover import DeviceRecover
+from skipOOBE.SkipOOBE import SkipOOBE
+from utils.DependenciesUtil import DependenciesUtil
+from utils.LogUtil import LogUtil
 
 
 class proxy:
@@ -20,13 +20,13 @@ class proxy:
 
     def do_script(self):
         LogUtil.log_start("doScript")
-        self.recover_device()
-        if self.get_result() is False:
-            return
-
-        self.skip_oobe()
-        if self.get_result() is False:
-            return
+        # self.recover_device()
+        # if self.get_result() is False:
+        #     return
+        #
+        # self.skip_oobe()
+        # if self.get_result() is False:
+        #     return
 
         self.install_test_apk()
         if self.get_result() is False:

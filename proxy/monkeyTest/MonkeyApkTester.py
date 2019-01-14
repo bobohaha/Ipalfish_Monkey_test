@@ -10,7 +10,6 @@ except:
 
 from proxy import param
 from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
-from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyTestApkLocalName
 from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
 from proxy.utils.KillProcessUtil import KillProcessUtil
@@ -76,7 +75,7 @@ class MonkeyApkTester:
         LogUtil.log_start("download_test_apk")
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
-        self._MonkeyApkSyncUtil.\
+        self._MonkeyApkSyncUtil. \
             download_objects_with_version(self._rom_info[param.TEST_APK_BUILD_VERSION])
         LogUtil.log_end("download_test_apk")
 
@@ -84,7 +83,8 @@ class MonkeyApkTester:
         if not self._is_auto_test:
             return
         LogUtil.log_start("install_downloaded_test_apk")
-        self.install_apk(MonkeyTestApkLocalName)
+        test_apk_file_name = self.get_file_name(".apk")
+        self.install_apk(test_apk_file_name)
         LogUtil.log_end("install_downloaded_test_apk")
 
     def install_apk(self, apk_file_path):
@@ -406,6 +406,10 @@ class MonkeyApkTester:
         print command
         os.system(command)
 
+        command = "mv " + MonkeyApkTester.CURRENT_PATH + "/mapping.txt" + " " + self._log_out_path
+        print command
+        os.system(command)
+
         LogUtil.log_end("move_result")
 
     def analyze_bugs(self, bug_files, bug_type):
@@ -443,3 +447,10 @@ class MonkeyApkTester:
     def clear_device_log(self):
         ADBUtil.rm(self._device_serial, MonkeyApkTester.DEVICE_OUTPUT_PATH)
         pass
+
+    def get_file_name(self, keyword, file_path="./"):
+        all_files = os.listdir(file_path)
+        for f in all_files:
+            if keyword in os.path.basename(f):
+                return f
+        return ""

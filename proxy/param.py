@@ -1,7 +1,7 @@
-from params import Region
+from params import CaseName
 from params import Language
 from params import PackageName
-from params import CaseName
+from params import Region
 
 # Param from manifest
 PACKAGE_NAME = "PACKAGE_NAME"
