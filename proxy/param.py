@@ -41,7 +41,9 @@ PRESETTING_CASE_PACKAGE = {PackageName.GAME_CENTER: CaseName.GAME_CENTER_PRESETT
                            PackageName.FunnyPuriVideo: CaseName.PANI_PURI_PRESETTING,
                            PackageName.GlobalFileExplorer: CaseName.GLOBAL_FILE_EXPLORER_PRESETTING,
                            PackageName.MiDrop: CaseName.MI_DROP_PRESETTING,
-                           PackageName.Browser: CaseName.BROWSER_PRESETTING}
+                           PackageName.Browser: CaseName.BROWSER_PRESETTING,
+                           PackageName.MintBrowser: CaseName.MINT_BROWSER_PRESETTING,
+                           PackageName.Download: CaseName.DOWNLOAD_PRESETTING}
 
 # Package need local resource
 PACKAGE_NEED_LOCAL_RESOURCE = [PackageName.MUSIC,

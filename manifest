@@ -20,5 +20,5 @@
 "necessary":"true"},
 {"name":"TEST_APK_BUILD_VERSION",
 "value":"None",
-"description":"自动化专用参数（Jenkins上的Build Number），其他测试，请保持默认",
+"description":"MIUI国际可持续集成平台专用参数（Jenkins上的Build Number）, 本参数请保持默认",
 "necessary":"true"}]
