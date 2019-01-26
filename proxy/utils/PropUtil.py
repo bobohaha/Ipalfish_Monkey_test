@@ -5,6 +5,7 @@ class PropUtil:
 
     PROP_DEVICE_PRODUCT = ["ro.build.product"]
     PROP_ROM_VERSION = ["ro.build.version.incremental"]
+    PROP_ANDROID_VERSION = ["ro.build.version.release"]
 
     @staticmethod
     def get_device_name(serial):
@@ -17,6 +18,14 @@ class PropUtil:
     @staticmethod
     def get_rom_version(serial):
         for prop in PropUtil.PROP_ROM_VERSION:
+            result = ADBUtil.get_prop(serial, prop)
+            if result:
+                break
+        return result
+
+    @staticmethod
+    def get_android_version(serial):
+        for prop in PropUtil.PROP_ANDROID_VERSION:
             result = ADBUtil.get_prop(serial, prop)
             if result:
                 break

@@ -1,10 +1,16 @@
-import os
+import datetime
 import re
 from time import sleep, time
 
+from proxy.utils.BasUtil import BasUtil
+from BugDao import BugDao
+from BugModel import *
+from MonkeyJiraTemplates import *
+from MonkeyJiraUtil import *
+
 try:
     import xlsxwriter
-except:
+except ImportError:
     os.system("pip install XlsxWriter")
     import xlsxwriter
 
@@ -37,7 +43,7 @@ class MonkeyApkTester:
     _device_serial = ""
     _log_out_path = ""
     _log_file_name = ""
-    _rom_info = None
+    _param_dict = None
     _rom_version = ""
     _device_name = ""
     _is_auto_test = False
@@ -55,8 +61,8 @@ class MonkeyApkTester:
     def __init__(self, serial, out_path, param_dict):
         self._device_serial = serial
         self._log_out_path = out_path
-        self._rom_info = param_dict
-        self._is_auto_test = True if self._rom_info[param.TEST_APK_BUILD_VERSION] != "None" else False
+        self._param_dict = param_dict
+        self._is_auto_test = True if self._param_dict[param.TEST_APK_BUILD_VERSION] != "None" else False
         self._seed = None
         self._seed_specify = param_dict["MONKEY_SEED"] if 'MONKEY_SEED' in param_dict.keys() \
                                                           and param_dict['MONKEY_SEED'] is not None \
@@ -66,7 +72,8 @@ class MonkeyApkTester:
         self.clear_log_folder()
         self._device_name = PropUtil.get_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
-        self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._rom_info[param.PACKAGE_NAME])
+        self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._param_dict[param.PACKAGE_NAME])
+        self.tag = param_dict['PACKAGE_NAME'] + "_" + str(datetime.datetime.now())
         pass
 
     def download_test_apk(self):
@@ -76,7 +83,7 @@ class MonkeyApkTester:
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
         self._MonkeyApkSyncUtil. \
-            download_objects_with_version(self._rom_info[param.TEST_APK_BUILD_VERSION])
+            download_objects_with_version(self._param_dict[param.TEST_APK_BUILD_VERSION])
         LogUtil.log_end("download_test_apk")
 
     def install_downloaded_test_apk(self):
@@ -123,17 +130,17 @@ class MonkeyApkTester:
     def run_test(self):
         LogUtil.log_start("run_test")
         self._rst = False
-        round_str = self._rom_info["MONKEY_ROUND"]
+        round_str = self._param_dict["MONKEY_ROUND"]
 
         round_count = int(round_str)
 
         for round_index in range(1, round_count + 1):
             self.test(round_index)
 
+        self.create_jira_or_add_comment()
         self.analyze_result()
         self.write_excel()
         self.move_result()
-
         LogUtil.log_end("run_test")
 
     def test(self, round_index):
@@ -162,8 +169,8 @@ class MonkeyApkTester:
 
     def init_monkey_command(self):
         LogUtil.log_start("init_monkey_command")
-        input_package_name = self._rom_info["PACKAGE_NAME"]
-        monkey_param = self._rom_info["MONKEY_PARAM"]
+        input_package_name = self._param_dict["PACKAGE_NAME"]
+        monkey_param = self._param_dict["MONKEY_PARAM"]
 
         package_name_ary = input_package_name.split(",")
         package_name_str = ""
@@ -198,7 +205,7 @@ class MonkeyApkTester:
         LogUtil.log_start("hold_for_monkey_run_time")
 
         start_time = time()
-        monkey_round_maximum_time_min = self._rom_info["MONKEY_ROUND_MAXIMUM_TIME"]
+        monkey_round_maximum_time_min = self._param_dict["MONKEY_ROUND_MAXIMUM_TIME"]
         monkey_max_time = int(monkey_round_maximum_time_min) * 60
 
         LogUtil.log(
@@ -340,8 +347,8 @@ class MonkeyApkTester:
             worksheet.write(line, 1, "Failed", format_value_center)
         line += 1
         worksheet.write(line, 0, 'Run Times*Hours', format_head_title)
-        worksheet.write(line, 1, self._rom_info["MONKEY_ROUND"] + "*" + str(
-            int(self._rom_info["MONKEY_ROUND_MAXIMUM_TIME"]) / 60) + "hours", format_value_center)
+        worksheet.write(line, 1, self._param_dict["MONKEY_ROUND"] + "*" + str(
+            int(self._param_dict["MONKEY_ROUND_MAXIMUM_TIME"]) / 60) + "hours", format_value_center)
         line += 2
 
         # line = 8
@@ -414,11 +421,11 @@ class MonkeyApkTester:
 
     def analyze_bugs(self, bug_files, bug_type):
         LogUtil.log_start("analyze_bugs")
-
+        print bug_files
         result = ""
         for filename in bug_files:
             if filename:
-
+                self.analysis_bug_bas(filename)
                 if self.BUG_TYPE_CRASH == bug_type:
                     bug = self.get_crash_info(filename)
                 elif self.BUG_TYPE_ANR == bug_type:
@@ -438,6 +445,31 @@ class MonkeyApkTester:
     def get_anr_info(self, filename):
         return self.BUG_TYPE_ANR + re.findall(r"anr_(.+?)_", filename)[0]
 
+    def analysis_bug_bas(self, file_name):
+        packages = self._param_dict['PACKAGE_NAME'].split(",")
+        if not isinstance(packages, list):
+            packages = [packages]
+        for package in packages:
+            self.analyzing_and_saving(file_name, package)
+        pass
+
+    def analyzing_and_saving(self, file_name, package):
+        bug_results = BasUtil().analysis(file_name, package)
+        if isinstance(bug_results, list) and len(bug_results) > 0:
+            for bug_res in bug_results:
+                bug = BugDao.save_bug_detail(bug_res, tag=self.tag)
+                if bug is False:
+                    print("Save bug details error")
+                    continue
+                print BugDao.save_bug_file(bug.bug_signature_code, file_name, self.tag)
+                print BugDao.save_bug_rom(bug.bug_signature_code,
+                                          self._device_name,
+                                          get_miui_model(self._device_name),
+                                          self._rom_version,
+                                          self.tag)
+        else:
+            print "there is no bug about {} in {}".format(package, file_name)
+
     def get_rst(self):
         return self._rst
 
@@ -454,3 +486,85 @@ class MonkeyApkTester:
             if keyword in os.path.basename(f):
                 return f
         return ""
+
+    def create_jira_or_add_comment(self):
+        bugs = BugDao.get_by_tag(Bugs, self.tag)
+        if bugs is not None:
+            for bug in bugs:
+                bug_jira = BugDao.get_by_signature(BugJira, bug_signature_code=bug.bug_signature_code)
+                if bug_jira is None:
+                    jira_key = self.create_new_jira(bug)
+                    self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
+                else:
+                    jira_key = bug_jira.get().jira_id
+                    self.add_comment(jira_key, bug)
+
+                self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
+                BugDao.save_bug_jira(bug.bug_signature_code, jira_key, self.tag)
+        else:
+            print "There is no bug found!!"
+        pass
+
+    def create_new_jira(self, bug):
+        summary = JiraMonkeySummaryTemplate().substitute(bug_type=bug.bug_type,
+                                                         bug_summary=bug.bug_summary)
+        description = JiraMonkeyDescriptionTemplate().substitute(package=bug.bug_package_name,
+                                                                 bug_type=bug.bug_type,
+                                                                 device_names=self._device_name,
+                                                                 rom_versions=self._rom_version,
+                                                                 bug_details=bug.bug_detail)
+        jira_util = MonkeyJiraUtil()
+        jira_util.jira_content.set_affects_versions(self._rom_version)
+        jira_util.jira_content.set_device_name(self._device_name)
+        component, assignee = get_component_assignee(self._param_dict['PACKAGE_NAME'])
+        jira_util.jira_content.set_component(component)
+        jira_util.jira_content.set_assignee(ISSUE_DEFAULT_OWNER)
+        jira_util.jira_content.set_summary(summary)
+        jira_util.jira_content.set_description(description)
+        jira_result = jira_util.create_monkey_task()
+        return jira_result.get('key')
+
+    def add_watchers(self, jira_key, watchers):
+        if watchers is None:
+            return
+        watchers_list = watchers.split(',')
+        jira_util = MonkeyJiraUtil()
+        for watcher in watchers_list:
+            print "adding watcher: " + watcher
+            jira_util.add_watchers(jira_id_or_key=jira_key, watchers=watcher)
+        pass
+
+    def add_comment(self, jira_key, bug):
+        comment = JiraCommentTemplate().substitute(package=bug.bug_package_name,
+                                                   bug_type=bug.bug_type,
+                                                   device_names=self._device_name,
+                                                   rom_versions=self._rom_version,
+                                                   bug_details=bug.bug_detail)
+        jira_util = MonkeyJiraUtil()
+        jira_util.add_comment(jira_id_or_key=jira_key, comment=comment)
+        pass
+
+    def add_attachments(self, jira_key, bug_signature_code, tag):
+        bug_files = BugDao.get_by_signature_tag(BugFile,
+                                                bug_signature_code=bug_signature_code,
+                                                tag=tag)
+        jira_util = MonkeyJiraUtil()
+        if bug_files is not None:
+            for bug_file in bug_files:
+                print "uploading file: " + bug_file.file_name
+                jira_util.add_attachment(jira_id_or_key=jira_key,
+                                         file_names=bug_file.file_name)
+
+        mapping_file_name = MonkeyApkTester.CURRENT_PATH + "/mapping.txt"
+        if os.path.exists(mapping_file_name):
+            jira_util.add_attachment(jira_id_or_key=jira_key, file_names=mapping_file_name)
+
+        else:
+            print "There is no files need uploading"
+        pass
+
+# if __name__ == "__main__":
+#     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"
+#     package = "com.mi.android.globallauncher"
+#     monkey = MonkeyApkTester()
+#     monkey.analysis_bug_result(file_name, package)
