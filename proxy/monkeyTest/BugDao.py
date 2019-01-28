@@ -19,14 +19,14 @@ class BugDao:
         _bug_get_result = BugDao.get(Bugs, Bugs.bug_signature_code == _bug.bug_signature_code)
         try:
             if _bug_get_result is None:
-                print "saving..."
+                print "bug detail saving..."
                 _bug.save()
             else:
-                print "updating..."
+                print "bug detail updating..."
                 Bugs.update(_bug.__data__).where(Bugs.bug_signature_code == _bug.bug_signature_code).execute()
             return _bug
         except (DoesNotExist, IntegrityError):
-            print "save " + str(_bug) + " error"
+            print "save bug detail \"" + str(_bug) + "\" error"
             print traceback.format_exc()
             return False
 
@@ -42,15 +42,15 @@ class BugDao:
                                          BugRom.device_name == device_name)
         try:
             if _bug_rom_get_result is None:
-                print "saving..."
+                print "bug rom saving..."
                 _bug_rom.save()
             else:
-                print "updating..."
+                print "bug rom updating..."
                 BugRom.update(_bug_rom.__data__)\
                     .where(BugRom.bug_signature_code == _bug_rom.bug_signature_code).execute()
             return _bug_rom
         except (IntegrityError, DoesNotExist):
-            print "save " + str(_bug_rom) + " error"
+            print "save bug rom \"" + str(_bug_rom) + "\" error"
             print traceback.format_exc()
             return False
 
@@ -61,14 +61,14 @@ class BugDao:
                                                            file_name=file_name,
                                                            tag=tag)
             if save_result is False:
-                print "save failed: {bug_signature_code: {bug_signature_code}, file_name: {file_name}, tag={tag}}" \
-                    .format(bug_signature_code=bug_signature_code, file_name=file_name, tag=tag)
+                print "bug file save failed: {{bug_signature_code: {0}, file_name: {1}, tag={2}}}" \
+                    .format(bug_signature_code, file_name, tag)
             else:
-                print "save successful!!"
+                print "bug file save successful!!"
             return _bug_file
         except (IntegrityError, DoesNotExist):
-            print "save error: {bug_signature_code: {bug_signature_code}, file_name: {file_name}, tag={tag}}"\
-                .format(bug_signature_code=bug_signature_code, file_name=file_name, tag=tag)
+            print "bug file save failed: {{bug_signature_code: {0}, file_name: {1}, tag={2}}}" \
+                .format(bug_signature_code, file_name, tag)
             print traceback.format_exc()
             return False
 
@@ -81,14 +81,14 @@ class BugDao:
         try:
             _jira_issue_get_result = BugDao.get(Jiras, Jiras.jira_id == jira_id)
             if _jira_issue_get_result is None:
-                print "saving..."
+                print "jira saving..."
                 _jira_issue.save()
             else:
-                print "updating..."
+                print "jira updating..."
                 Jiras.update(_jira_issue.__data__).where(Jiras.jira_id == _jira_issue.jira_id).execute()
             return _jira_issue
         except (IntegrityError, DoesNotExist):
-            print "save " + str(_jira_issue) + " error"
+            print "save jira \"" + str(_jira_issue) + "\" error"
             print traceback.format_exc()
             return False
 
@@ -97,18 +97,18 @@ class BugDao:
         _bug_jira = BugJira(bug_signature_code=bug_signature_code,
                             jira_id=jira_id,
                             tag=tag)
-        _bug_jira_get_result = BugDao.get_by_signature_tag(BugJira, bug_signature_code, tag)
+        _bug_jira_get_result = BugDao.get_by_signature(BugJira, bug_signature_code)
         try:
             if _bug_jira_get_result is None:
-                print "saving..."
+                print "bug jira saving..."
                 _bug_jira.save()
             else:
-                print "updating..."
+                print "bug jira updating..."
                 BugJira.update(_bug_jira.__data__)\
                     .where(BugJira.bug_signature_code == _bug_jira.bug_signature_code).execute()
             return _bug_jira
         except (IntegrityError, DoesNotExist):
-            print "save " + str(_bug_jira) + " error"
+            print "save bug jira \"" + str(_bug_jira) + "\" error"
             print traceback.format_exc()
             return False
 
@@ -135,15 +135,16 @@ class BugDao:
 
     @classmethod
     def get(cls, table_name, *query, **filters):
+        sq = table_name.select()
+        if query:
+            sq = sq.where(*query)
+        if filters:
+            sq = sq.filter(**filters)
         try:
-            sq = table_name.select()
-            if query:
-                sq = sq.where(*query)
-            if filters:
-                sq = sq.filter(**filters)
-            return sq
+            sq.get()
         except DoesNotExist:
             return None
+        return sq
 
     @classmethod
     def update(cls, table_name, __data=None, **kwargs):

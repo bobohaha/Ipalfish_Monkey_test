@@ -40,7 +40,7 @@ class Bugs(BaseModel):
 
 
 class BugRom(BaseModel):
-    bug_signature_code = CharField(unique=True, index=True)
+    bug_signature_code = CharField(index=True)
     device_name = CharField()
     jira_miui_model = CharField()
     rom_version = CharField()
@@ -48,7 +48,7 @@ class BugRom(BaseModel):
 
 
 class BugFile(BaseModel):
-    bug_signature_code = CharField(unique=True, index=True)
+    bug_signature_code = CharField(index=True)
     file_name = CharField()
     tag = CharField()
 
@@ -60,7 +60,7 @@ class BugJira(BaseModel):
 
 
 class Jiras(BaseModel):
-    jira_id = CharField()
+    jira_id = CharField(unique=True, index=True)
     jira_summary = CharField()
     jira_assignee = CharField()
     tag = CharField()

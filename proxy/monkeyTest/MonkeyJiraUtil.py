@@ -9,7 +9,7 @@ class MonkeyJiraUtil(JIRAUtil):
         pass
 
     def create_monkey_task(self):
-        self.set_jira_content(self.jira_content)
+        self.set_jira_content(self.jira_content.jira_content)
         return self.create_or_edit_issue()
 
     class JiraContent:

@@ -158,7 +158,7 @@ class JIRAUtil:
 
     @classmethod
     def get_model_tag(cls, device_name):
-        model_tag = JIRAParam.MODEL_TAG[device_name]
+        model_tag = JIRAParam.get_miui_model(device_name)
 
         if model_tag is not None:
             return model_tag
@@ -208,8 +208,8 @@ class JIRAUtil:
             self._jira_session.add_header('Accept', 'application/json')
             self._jira_session.add_header('Content-type', 'application/json')
             r = self._jira_session.post(_url=create_issue_url, _data=json.dumps(self._jira_data))
+            print r, r.status_code
             if r.status_code >= 300 or r.status_code < 200:
-                print r
                 return r.json()
             else:
                 return r.json()
@@ -245,10 +245,8 @@ class JIRAUtil:
                 files['file'] = file_list
 
             r = self._jira_session.post(_url=add_attachment_jira_url, files=files)
-            if r.status_code >= 300 or r.status_code < 200:
-                return r.json()
-            else:
-                return r.json()
+            print r, r.status_code, r.content
+            return r.status_code == 200
         except Exception:
             print traceback.format_exc()
 
@@ -263,10 +261,8 @@ class JIRAUtil:
                 'body': comment
             }
             r = self._jira_session.post(_url=add_comment_jira_url, _json=post_data)
-            if r.status_code >= 300 or r.status_code < 200:
-                return r.json()
-            else:
-                return r.json()
+            print r, r.status_code, r.content
+            return 200 <= r.status_code < 300
         except Exception:
             print traceback.format_exc()
 
@@ -278,7 +274,7 @@ class JIRAUtil:
             self._jira_session.add_header('Content-Type', 'application/json')
             post_data = json.dumps(watchers)
             r = self._jira_session.post(add_watchers_jira_url, _data=post_data)
-            print r
+            print r, r.status_code, r.content
             return r.status_code == 204
         except Exception:
             print traceback.format_exc()

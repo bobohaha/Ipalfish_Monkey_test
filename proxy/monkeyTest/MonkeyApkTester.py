@@ -1,6 +1,12 @@
 import datetime
 import re
 from time import sleep, time
+import zipfile
+try:
+    import zlib
+    compression = zipfile.ZIP_DEFLATED
+except:
+    compression = zipfile.ZIP_STORED
 
 from proxy.utils.BasUtil import BasUtil
 from BugDao import BugDao
@@ -517,12 +523,15 @@ class MonkeyApkTester:
         jira_util.jira_content.set_affects_versions(self._rom_version)
         jira_util.jira_content.set_device_name(self._device_name)
         component, assignee = get_component_assignee(self._param_dict['PACKAGE_NAME'])
+        print "assignee", assignee
         jira_util.jira_content.set_component(component)
         jira_util.jira_content.set_assignee(ISSUE_DEFAULT_OWNER)
         jira_util.jira_content.set_summary(summary)
         jira_util.jira_content.set_description(description)
         jira_result = jira_util.create_monkey_task()
-        return jira_result.get('key')
+        jira_key = jira_result.get('key')
+        print jira_key
+        return jira_key
 
     def add_watchers(self, jira_key, watchers):
         if watchers is None:
@@ -531,6 +540,8 @@ class MonkeyApkTester:
         jira_util = MonkeyJiraUtil()
         for watcher in watchers_list:
             print "adding watcher: " + watcher
+            if watcher is None:
+                continue
             jira_util.add_watchers(jira_id_or_key=jira_key, watchers=watcher)
         pass
 
@@ -552,16 +563,52 @@ class MonkeyApkTester:
         if bug_files is not None:
             for bug_file in bug_files:
                 print "uploading file: " + bug_file.file_name
+                file_name = self.get_valid_file_name(bug_file.file_name)
+                if file_name is False:
+                    continue
                 jira_util.add_attachment(jira_id_or_key=jira_key,
-                                         file_names=bug_file.file_name)
+                                         file_names=file_name)
+        else:
+            print "There is no bug report need uploading"
 
         mapping_file_name = MonkeyApkTester.CURRENT_PATH + "/mapping.txt"
         if os.path.exists(mapping_file_name):
             jira_util.add_attachment(jira_id_or_key=jira_key, file_names=mapping_file_name)
 
         else:
-            print "There is no files need uploading"
+            print "There is no mapping file need uploading"
         pass
+
+    def is_file_valid(self, file_name):
+        if type(file_name).__name__ != "unicode":
+            file_name = unicode(file_name, 'utf8')
+        file_size = os.path.getsize(file_name)
+        file_size = file_size/float(1024 * 1024)
+        file_size = round(file_size, 2)
+        return file_size <= 20
+
+    def get_valid_file_name(self, file_name):
+        if self.is_file_valid(file_name):
+            return file_name
+        else:
+            zip_file_name = self.compress_file(file_name)
+            if self.is_file_valid(zip_file_name):
+                return zip_file_name
+            else:
+                return False
+
+    def compress_file(self, file_name):
+        modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
+        zip_file_name = file_name + ".zip"
+        print('creating archive: ' + zip_file_name)
+        zf = zipfile.ZipFile(zip_file_name, mode='w')
+        try:
+            print('adding ' + file_name + ' with compression mode ' + str(modes[compression]))
+            zf.write(file_name, compress_type=compression)
+        finally:
+            zf.close()
+            return zip_file_name
+
 
 # if __name__ == "__main__":
 #     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"
