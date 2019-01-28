@@ -503,6 +503,8 @@ class MonkeyApkTester:
                     self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
                 else:
                     jira_key = bug_jira.get().jira_id
+                    if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
+                        MonkeyJiraUtil().change_issue_to_reopen(jira_key)
                     self.add_comment(jira_key, bug)
 
                 self.add_attachments(jira_key, bug.bug_signature_code, self.tag)

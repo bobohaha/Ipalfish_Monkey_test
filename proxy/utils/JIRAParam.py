@@ -10,6 +10,7 @@ JIRA_EDIT_ISSUE_API = '/rest/api/2/issue/{issueIdOrKey}'
 JIRA_ADD_ATTACHMENT_API = '/rest/api/2/issue/{issueIdOrKey}/attachments'
 JIRA_ADD_COMMENT_API = '/rest/api/2/issue/{issueIdOrKey}/comment'
 JIRA_ADD_WATCHER_API = '/rest/api/2/issue/{issueIdOrKey}/watchers'
+JIRA_TRANSITION_API = '/rest/api/2/issue/{issueIdOrKey}/transitions'
 
 JIRA_FIELDS = "fields"
 JIRA_UPDATE = "update"

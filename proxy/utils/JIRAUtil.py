@@ -279,6 +279,43 @@ class JIRAUtil:
         except Exception:
             print traceback.format_exc()
 
+    def is_can_reopen_issue(self, jira_id_or_key):
+        get_transition_url = '{}:{}{}'.format(JIRAParam.JIRA_HOST,
+                                              JIRAParam.JIRA_PORT,
+                                              JIRAParam.JIRA_TRANSITION_API.format(issueIdOrKey=jira_id_or_key))
+        try:
+            self._jira_session.add_header('Accept', 'application/json')
+            r = self._jira_session.get(get_transition_url)
+            print r, r.status_code, r.content
+            if r.status_code == 200:
+                transitions = r.json()['transitions']
+                for transition in transitions:
+                    if transition['name'] == "Reopen Issue":
+                        return True
+                return False
+            else:
+                return False
+        except:
+            print traceback.format_exc()
+            return False
+
+    def change_issue_to_reopen(self, jira_id_or_key):
+        get_transition_url = '{}:{}{}'.format(JIRAParam.JIRA_HOST,
+                                              JIRAParam.JIRA_PORT,
+                                              JIRAParam.JIRA_TRANSITION_API.format(issueIdOrKey=jira_id_or_key))
+        try:
+            self._jira_session.add_header('Content-Type', 'application/json')
+            post_data = json.dumps({
+                "transition": {
+                    "id": "211"
+                }
+            })
+            r = self._jira_session.post(get_transition_url, _data=post_data)
+            print r, r.status_code, r.content
+            return r.status_code == 204
+        except:
+            print traceback.format_exc()
+
     def open_jira_task(self, jira_content=None):
         self.set_jira_issue_type(JIRAParam.ISSUE_TYPE_TASK)
         result = self.create_or_edit_issue(jira_content=jira_content)
