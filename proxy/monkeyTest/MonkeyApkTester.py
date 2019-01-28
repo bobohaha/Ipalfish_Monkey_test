@@ -526,8 +526,12 @@ class MonkeyApkTester:
         jira_util.jira_content.set_device_name(self._device_name)
         component, assignee = get_component_assignee(self._param_dict['PACKAGE_NAME'])
         print "assignee", assignee
-        jira_util.jira_content.set_component(component)
-        jira_util.jira_content.set_assignee(ISSUE_DEFAULT_OWNER)
+        if component is not None:
+            jira_util.jira_content.set_component(component)
+        if assignee is None:
+            jira_util.jira_content.set_assignee(ISSUE_DEFAULT_OWNER)
+        else:
+            jira_util.jira_content.set_assignee(assignee)
         jira_util.jira_content.set_summary(summary)
         jira_util.jira_content.set_description(description)
         jira_result = jira_util.create_monkey_task()

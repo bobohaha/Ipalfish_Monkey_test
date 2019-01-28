@@ -204,5 +204,7 @@ def get_component_assignee(package_names):
         return COMPONENT_GLOBAL_MI_DROP, "cuixiang"
     if PersonalAssistant in packages:
         return COMPONENT_GLOBAL_PERSONAL_ASSISTANT, "liwenquan"
+    if Download in packages:
+        return COMPONENT_GLOBAL_DOWNLOAD_MANAGER, "dingtianmeng"
 
     return None, None
