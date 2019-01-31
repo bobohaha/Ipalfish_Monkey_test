@@ -57,9 +57,13 @@ class BasUtil:
         self.generate_bas_analysis_request_body(package)
         response = self.session.post(self.bas_url, data=self.body, files=self.files)
         if response.status_code is requests.codes.ok:
-            return response.json()['data']['bugs']
+            try:
+                return response.json()['data']['bugs']
+            except ValueError:
+                print "analysis error", response.status_code, response.content
+                return {}
         else:
-            print "analysis error"
+            print "analysis error", response.status_code, response.content
             return {}
 
 
