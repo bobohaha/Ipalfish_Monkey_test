@@ -8,6 +8,10 @@ class BugDao:
 
     @staticmethod
     def save_bug_detail(bug_detail_dict, tag):
+        if 'det' not in bug_detail_dict.keys() or 'dgt' not in bug_detail_dict.keys():
+            print "Not valid bug"
+            return False
+
         _bug = Bugs(bug_detail=bug_detail_dict['det'],
                     bug_signature_code=bug_detail_dict['dgt'],
                     bug_pid=bug_detail_dict['pid'],
