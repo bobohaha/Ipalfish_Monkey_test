@@ -8,6 +8,7 @@ class BugDao:
 
     @staticmethod
     def save_bug_detail(bug_detail_dict, tag):
+        print "save_bug_detail: ", str(bug_detail_dict), tag
         if 'det' not in bug_detail_dict.keys() or 'dgt' not in bug_detail_dict.keys():
             print "Not valid bug"
             return False
@@ -36,6 +37,7 @@ class BugDao:
 
     @staticmethod
     def save_bug_rom(bug_signature_code, device_name, jira_miui_model, rom_version, tag):
+        print "save_bug_rom: ", bug_signature_code, device_name, jira_miui_model, rom_version, tag
         _bug_rom = BugRom(bug_signature_code=bug_signature_code,
                           device_name=device_name,
                           jira_miui_model=jira_miui_model,
@@ -60,6 +62,7 @@ class BugDao:
 
     @staticmethod
     def save_bug_file(bug_signature_code, file_name, tag):
+        print "save_bug_file: ", bug_signature_code, file_name, tag
         try:
             _bug_file, save_result = BugFile.get_or_create(bug_signature_code=bug_signature_code,
                                                            file_name=file_name,
@@ -78,6 +81,7 @@ class BugDao:
 
     @staticmethod
     def save_jira(jira_id, jira_summary, jira_assignee, tag):
+        print "save_jira: ", jira_id, jira_summary, jira_assignee, tag
         _jira_issue = Jiras(jira_id=jira_id,
                             jira_summary=jira_summary,
                             jira_assignee=jira_assignee,
@@ -98,6 +102,7 @@ class BugDao:
 
     @staticmethod
     def save_bug_jira(bug_signature_code, jira_id, tag):
+        print "save_bug_jira: ", bug_signature_code, jira_id, tag
         _bug_jira = BugJira(bug_signature_code=bug_signature_code,
                             jira_id=jira_id,
                             tag=tag)
@@ -139,19 +144,22 @@ class BugDao:
 
     @classmethod
     def get(cls, table_name, *query, **filters):
+        print "BugDao.get(" + table_name.__name__ + ", " + str(query) + "," + str(filters) + "): >>"
         sq = table_name.select()
         if query:
             sq = sq.where(*query)
         if filters:
             sq = sq.filter(**filters)
         try:
-            sq.get()
+            print "sq.get():", sq.get()
         except DoesNotExist:
+            print "BugDao.get(" + table_name.__name__ + ", " + str(query) + "," + str(filters) + "): DoesNotExist <<"
             return None
         return sq
 
     @classmethod
     def update(cls, table_name, __data=None, **kwargs):
+        print "update: ", table_name.__name__
         try:
             return table_name.update(__data, **kwargs)
         except DoesNotExist:

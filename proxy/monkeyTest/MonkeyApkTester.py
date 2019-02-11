@@ -432,6 +432,7 @@ class MonkeyApkTester:
         for filename in bug_files:
             if filename:
                 self.analysis_bug_bas(filename)
+                bug = None
                 if self.BUG_TYPE_CRASH == bug_type:
                     bug = self.get_crash_info(filename)
                 elif self.BUG_TYPE_ANR == bug_type:
@@ -494,8 +495,10 @@ class MonkeyApkTester:
         return ""
 
     def create_jira_or_add_comment(self):
+        LogUtil.log_start("create_jira_or_add_comment")
         bugs = BugDao.get_by_tag(Bugs, self.tag)
         if bugs is not None:
+            LogUtil.log("Having bugs...")
             for bug in bugs:
                 bug_jira = BugDao.get_by_signature(BugJira, bug_signature_code=bug.bug_signature_code)
                 if bug_jira is None:
@@ -511,9 +514,12 @@ class MonkeyApkTester:
                 BugDao.save_bug_jira(bug.bug_signature_code, jira_key, self.tag)
         else:
             print "There is no bug found!!"
+
+        LogUtil.log_end("create_jira_or_add_comment")
         pass
 
     def create_new_jira(self, bug):
+        LogUtil.log_start("create_new_jira")
         summary = JiraMonkeySummaryTemplate().substitute(bug_type=bug.bug_type,
                                                          bug_summary=bug.bug_summary)
         description = JiraMonkeyDescriptionTemplate().substitute(package=bug.bug_package_name,
@@ -536,10 +542,12 @@ class MonkeyApkTester:
         jira_util.jira_content.set_description(description)
         jira_result = jira_util.create_monkey_task()
         jira_key = jira_result.get('key')
-        print jira_key
+        print "jira_key", jira_key
+        LogUtil.log_end("create_new_jira")
         return jira_key
 
     def add_watchers(self, jira_key, watchers):
+        LogUtil.log_start("add_watchers: " + str(watchers))
         if watchers is None:
             return
         watchers_list = watchers.split(',')
@@ -549,9 +557,11 @@ class MonkeyApkTester:
             if watcher is None:
                 continue
             jira_util.add_watchers(jira_id_or_key=jira_key, watchers=watcher)
+        LogUtil.log_end("add_watchers: " + str(watchers))
         pass
 
     def add_comment(self, jira_key, bug):
+        LogUtil.log_start("add_comment")
         comment = JiraCommentTemplate().substitute(package=bug.bug_package_name,
                                                    bug_type=bug.bug_type,
                                                    device_names=self._device_name,
@@ -559,9 +569,11 @@ class MonkeyApkTester:
                                                    bug_details=bug.bug_detail)
         jira_util = MonkeyJiraUtil()
         jira_util.add_comment(jira_id_or_key=jira_key, comment=comment)
+        LogUtil.log_end("add_comment")
         pass
 
     def add_attachments(self, jira_key, bug_signature_code, tag):
+        LogUtil.log_start("add_attachments")
         bug_files = BugDao.get_by_signature_tag(BugFile,
                                                 bug_signature_code=bug_signature_code,
                                                 tag=tag)
@@ -583,6 +595,8 @@ class MonkeyApkTester:
 
         else:
             print "There is no mapping file need uploading"
+
+        LogUtil.log_end("add_attachments")
         pass
 
     def is_file_valid(self, file_name):
@@ -604,6 +618,7 @@ class MonkeyApkTester:
                 return False
 
     def compress_file(self, file_name):
+        LogUtil.log_start("compress_file")
         modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
         zip_file_name = file_name + ".zip"
         print('creating archive: ' + zip_file_name)
@@ -613,6 +628,7 @@ class MonkeyApkTester:
             zf.write(file_name, compress_type=compression)
         finally:
             zf.close()
+            LogUtil.log_end("compress_file")
             return zip_file_name
 
 
