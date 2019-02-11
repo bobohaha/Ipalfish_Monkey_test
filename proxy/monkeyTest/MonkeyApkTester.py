@@ -135,7 +135,7 @@ class MonkeyApkTester:
 
     def run_test(self):
         LogUtil.log_start("run_test")
-        self._rst = False
+        self._rst = True
         round_str = self._param_dict["MONKEY_ROUND"]
 
         round_count = int(round_str)
@@ -144,7 +144,7 @@ class MonkeyApkTester:
             self.test(round_index)
 
         self.create_jira_or_add_comment()
-        self.analyze_result()
+        # self.analyze_result()
         self.write_excel()
         self.move_result()
         LogUtil.log_end("run_test")
@@ -463,6 +463,7 @@ class MonkeyApkTester:
     def analyzing_and_saving(self, file_name, package):
         bug_results = BasUtil().analysis(file_name, package)
         if isinstance(bug_results, list) and len(bug_results) > 0:
+            self._rst = False
             for bug_res in bug_results:
                 bug = BugDao.save_bug_detail(bug_res, tag=self.tag)
                 if bug is False:
