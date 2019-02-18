@@ -1,11 +1,10 @@
-import datetime
 import re
 from time import sleep, time
 import zipfile
 try:
     import zlib
     compression = zipfile.ZIP_DEFLATED
-except:
+except ImportError:
     compression = zipfile.ZIP_STORED
 
 from proxy.utils.BasUtil import BasUtil
@@ -33,9 +32,8 @@ from proxy.utils.PropUtil import PropUtil
 class MonkeyApkTester:
     CURRENT_PATH = PathUtil.get_file_path(__file__)
 
-    OUTPUT_PATH = CURRENT_PATH + "/monkey_log/"
+    OUTPUT_PATH = "{out_put}/monkey_log/"
     RESULT_PATH = OUTPUT_PATH + "/result.xlsx"
-
     OUTPUT_CRASH_PATH = OUTPUT_PATH + "crash/"
     OUTPUT_ANR_PATH = OUTPUT_PATH + "anr/"
 
@@ -46,13 +44,7 @@ class MonkeyApkTester:
     BUG_TYPE_CRASH = "app_crash"
     BUG_TYPE_ANR = "anr_"
 
-    _device_serial = ""
-    _log_out_path = ""
     _log_file_name = ""
-    _param_dict = None
-    _rom_version = ""
-    _device_name = ""
-    _is_auto_test = False
     _monkey_command = ""
 
     results = {}
@@ -64,7 +56,7 @@ class MonkeyApkTester:
 
     _rst = None
 
-    def __init__(self, serial, out_path, param_dict):
+    def __init__(self, serial, out_path, param_dict, tag):
         self._device_serial = serial
         self._log_out_path = out_path
         self._param_dict = param_dict
@@ -79,7 +71,13 @@ class MonkeyApkTester:
         self._device_name = PropUtil.get_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
         self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._param_dict[param.PACKAGE_NAME])
-        self.tag = param_dict['PACKAGE_NAME'] + "_" + str(datetime.datetime.now())
+        self.tag = tag
+        self.jira_keys = list()
+
+        self.OUTPUT_PATH = self.OUTPUT_PATH.format(out_put=self._log_out_path)
+        self.RESULT_PATH = self.RESULT_PATH.format(out_put=self._log_out_path)
+        self.OUTPUT_CRASH_PATH = self.OUTPUT_CRASH_PATH.format(out_put=self._log_out_path)
+        self.OUTPUT_ANR_PATH = self.OUTPUT_ANR_PATH.format(out_put=self._log_out_path)
         pass
 
     def download_test_apk(self):
@@ -117,12 +115,12 @@ class MonkeyApkTester:
         pass
 
     def clear_log_folder(self):
-        if os.path.exists(MonkeyApkTester.OUTPUT_PATH):
-            command = "rm -rf " + MonkeyApkTester.OUTPUT_PATH
+        if os.path.exists(self.OUTPUT_PATH):
+            command = "rm -rf " + self.OUTPUT_PATH
             print command
             os.system(command)
 
-        ADBUtil.rm(self._device_serial, MonkeyApkTester.DEVICE_OUTPUT_PATH)
+        ADBUtil.rm(self._device_serial, self.DEVICE_OUTPUT_PATH)
 
         if os.path.exists(self._log_out_path):
             command = "rm -rf " + self._log_out_path
@@ -143,10 +141,8 @@ class MonkeyApkTester:
         for round_index in range(1, round_count + 1):
             self.test(round_index)
 
+        self.copy_files_to_output_path()
         self.create_jira_or_add_comment()
-        # self.analyze_result()
-        self.write_excel()
-        self.move_result()
         LogUtil.log_end("run_test")
 
     def test(self, round_index):
@@ -220,7 +216,7 @@ class MonkeyApkTester:
 
         while time() - start_time < monkey_max_time:
             LogUtil.log("hold_for_monkey_run_time(): " + str(time()))
-            sleep(MonkeyApkTester.MONKEY_CHECK_INTERVAL_SECOND)
+            sleep(self.MONKEY_CHECK_INTERVAL_SECOND)
             if ADBUtil.get_process_id_by_name(self._device_serial, "monkey") is None:
                 self.run_monkey_in_background()
 
@@ -233,40 +229,40 @@ class MonkeyApkTester:
     def pull_log(self, round_index):
 
         ADBUtil.mkdir_p(self._device_serial,
-                        MonkeyApkTester.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(
+                        self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(
                             round_index) + "/")
         ADBUtil.move(self._device_serial, "/sdcard/app_crash* ",
-                     MonkeyApkTester.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/")
+                     self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/")
         ADBUtil.move(self._device_serial, "/data/app_crash/traces* ",
-                     MonkeyApkTester.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/")
+                     self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/")
 
-        command = "mkdir -p " + MonkeyApkTester.OUTPUT_CRASH_PATH
+        command = "mkdir -p " + self.OUTPUT_CRASH_PATH
         print command
         os.system(command)
         #
         ADBUtil.pull(self._device_serial,
-                     MonkeyApkTester.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/",
-                     MonkeyApkTester.OUTPUT_CRASH_PATH)
+                     self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/",
+                     self.OUTPUT_CRASH_PATH)
 
         ADBUtil.mkdir_p(self._device_serial,
-                        MonkeyApkTester.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/")
+                        self.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/")
         ADBUtil.move(self._device_serial, "/sdcard/anr_* ",
-                     MonkeyApkTester.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/")
+                     self.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/")
         ADBUtil.move(self._device_serial, "/data/anr/traces* ",
-                     MonkeyApkTester.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/")
+                     self.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/")
 
-        command = "mkdir -p " + MonkeyApkTester.OUTPUT_ANR_PATH
+        command = "mkdir -p " + self.OUTPUT_ANR_PATH
         print command
         os.system(command)
         #
         ADBUtil.pull(self._device_serial,
-                     MonkeyApkTester.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/",
-                     MonkeyApkTester.OUTPUT_ANR_PATH)
+                     self.DEVICE_OUTPUT_ANR_PATH + "round_" + str(round_index) + "/",
+                     self.OUTPUT_ANR_PATH)
         pass
 
     def analyze_log(self, round_index, running_time):
         self.get_seed()
-        command = "ls " + MonkeyApkTester.OUTPUT_CRASH_PATH + "round_" + str(
+        command = "ls " + self.OUTPUT_CRASH_PATH + "round_" + str(
             round_index) + "/app_crash*"
         output = os.popen(command)
         result = output.read().strip()
@@ -278,7 +274,7 @@ class MonkeyApkTester:
         else:
             pass
 
-        command = "ls " + MonkeyApkTester.OUTPUT_ANR_PATH + "round_" + str(round_index) + "/anr_*"
+        command = "ls " + self.OUTPUT_ANR_PATH + "round_" + str(round_index) + "/anr_*"
         output = os.popen(command)
         result = output.read().strip()
 
@@ -310,116 +306,9 @@ class MonkeyApkTester:
         else:
             self._seed = None
 
-    def write_excel(self):
-
-        if os.path.exists(MonkeyApkTester.RESULT_PATH):
-            os.remove(MonkeyApkTester.RESULT_PATH)
-        # self.analysis_Bug_data(datas)
-        # print self.BUGS
-
-        workbook = xlsxwriter.Workbook(MonkeyApkTester.RESULT_PATH)
-        worksheet = workbook.add_worksheet()
-
-        worksheet.set_column("A:A", 20)
-        worksheet.set_column("B:B", 20)
-        worksheet.set_column("C:C", 20)
-        worksheet.set_column("D:D", 35)
-        worksheet.set_column("E:E", 35)
-
-        line = 0
-        format_value_left = workbook.add_format(
-            {'border': 1, 'border_color': 'black', 'align': 'left'})
-        format_value_left_wrap = workbook.add_format(
-            {'border': 1, 'border_color': 'black', 'align': 'left'})
-        format_value_left_wrap.set_text_wrap()
-        format_value_center = workbook.add_format(
-            {'border': 1, 'border_color': 'black', 'align': 'center'})
-        format_head_title = workbook.add_format(
-            {'bold': True, 'bg_color': '#FFC000', 'align': 'right', 'border': 1,
-             'border_color': 'black'})
-        format_head_value = workbook.add_format(
-            {'bold': True, 'border': 1, 'border_color': 'black'})
-
-        worksheet.write(line, 0, 'Device', format_head_title)
-        worksheet.write(line, 1, self._device_name, format_value_center)
-        line += 1
-        worksheet.write(line, 0, 'Version', format_head_title)
-        worksheet.write(line, 1, self._rom_version, format_value_center)
-        line += 1
-        worksheet.write(line, 0, 'Test Result', format_head_title)
-        if self._rst:
-            worksheet.write(line, 1, "Pass", format_value_center)
-        else:
-            worksheet.write(line, 1, "Failed", format_value_center)
-        line += 1
-        worksheet.write(line, 0, 'Run Times*Hours', format_head_title)
-        worksheet.write(line, 1, self._param_dict["MONKEY_ROUND"] + "*" + str(
-            int(self._param_dict["MONKEY_ROUND_MAXIMUM_TIME"]) / 60) + "hours", format_value_center)
-        line += 2
-
-        # line = 8
-        format_item = workbook.add_format({'bold': True})
-        format_item_title = workbook.add_format(
-            {'bold': True, 'font_color': '#FFFFFF', 'bg_color': '#2F75B5', 'align': 'center',
-             'border': 1, 'border_color': 'black'})
-        format_item_case = workbook.add_format(
-            {'bold': True, 'bg_color': '#BDD7EE', 'align': 'center', 'border': 1,
-             'border_color': 'black'})
-
-        worksheet.write(line, 0, 'Bug Analysis', format_item)
-        line += 1
-        bug_titles = ['Bug name', 'Count', 'JIRA ID', 'JIRA link']
-        for x in range(0, len(bug_titles)):
-            worksheet.write(line, x, bug_titles[x], format_item_title)
-        line += 1
-
-        for bug in self.bugs:
-            worksheet.write(line, 0, bug, format_value_left)
-            worksheet.write(line, 1, self.bugs[bug], format_value_center)
-            worksheet.write(line, 2, None, format_value_center)
-            worksheet.write(line, 3, None, format_value_center)
-            line += 1
-        line += 1
-
-        # worksheet.write(line,0, 'Bug Analysis',format_item)
-        detail_titles = ['Run Count', 'RunTime(min)', 'Seed', 'ANR', 'Crash']
-        line += 1
-        for x in range(0, len(detail_titles)):
-            worksheet.write(line, x, detail_titles[x], format_item_title)
-        line += 1
-
-        # #print self.RESULTS
-        # for case in self.RESULTS:
-        #     #line +=1
-        #     merge_line = 'A%s:E%s'%(str(line+1),str(line+1))
-        #     worksheet.merge_range(merge_line, case, format_item_case)
-        #     interval_count = 1
-        #     for num in self.RESULTS[case]:
-        #         worksheet.write(line+num,0,num,format_value_center)
-        #         worksheet.write(line+num,1,self.RESULTS[case][num]['times'],format_value_center)
-        #         worksheet.write(line+num,2,self.RESULTS[case][num]['seed'],format_value_center)
-        #         worksheet.write(line+num,3,'\n'.join(self.RESULTS[case][num]['anr']),format_value_left_wrap)
-        #         worksheet.write(line+num,4,'\n'.join(self.RESULTS[case][num]['crash']),format_value_left_wrap)
-        #         interval_count +=1
-        #     line = line + interval_count +1
-
-        for num in self.results:
-            worksheet.write(line + num, 0, num, format_value_center)
-            worksheet.write(line + num, 1, self.results[num]['times'], format_value_center)
-            worksheet.write(line + num, 2, self.results[num]['seed'], format_value_center)
-            worksheet.write(line + num, 3, self.results[num]['anr'], format_value_center)
-            worksheet.write(line + num, 4, self.results[num]['crash'], format_value_center)
-
-        workbook.close()
-
-    def move_result(self):
+    def copy_files_to_output_path(self):
         LogUtil.log_start("move_result")
-
-        command = "mv " + MonkeyApkTester.OUTPUT_PATH + " " + self._log_out_path
-        print command
-        os.system(command)
-
-        command = "mv " + MonkeyApkTester.CURRENT_PATH + "/mapping.txt" + " " + self._log_out_path
+        command = "cp " + self.CURRENT_PATH + "/mapping.txt" + " " + self._log_out_path
         print command
         os.system(command)
 
@@ -479,13 +368,13 @@ class MonkeyApkTester:
             print "there is no bug about {} in {}".format(package, file_name)
 
     def get_rst(self):
-        return self._rst
+        return self._rst, self.jira_keys
 
     def analyze_result(self):
         self._rst = len(self.bugs) == 0
 
     def clear_device_log(self):
-        ADBUtil.rm(self._device_serial, MonkeyApkTester.DEVICE_OUTPUT_PATH)
+        ADBUtil.rm(self._device_serial, self.DEVICE_OUTPUT_PATH)
         pass
 
     def get_file_name(self, keyword, file_path="./"):
@@ -503,13 +392,17 @@ class MonkeyApkTester:
             for bug in bugs:
                 bug_jira = BugDao.get_by_signature(BugJira, bug_signature_code=bug.bug_signature_code)
                 if bug_jira is None:
-                    jira_key = self.create_new_jira(bug)
+                    jira_key, jira_summary, jira_assignee = self.create_new_jira_and_save(bug)
+                    if "error_jira_key" not in jira_key:
+                        BugDao.save_jira(jira_key, jira_summary, jira_assignee, self.tag)
                     self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
                 else:
                     jira_key = bug_jira.get().jira_id
                     if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
                         MonkeyJiraUtil().change_issue_to_reopen(jira_key)
                     self.add_comment(jira_key, bug)
+                    BugDao.update_jiras_tag_by_jira_id(jira_key, self.tag)
+                self.jira_keys.append(jira_key)
 
                 self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
                 BugDao.save_bug_jira(bug.bug_signature_code, jira_key, self.tag)
@@ -519,7 +412,7 @@ class MonkeyApkTester:
         LogUtil.log_end("create_jira_or_add_comment")
         pass
 
-    def create_new_jira(self, bug):
+    def create_new_jira_and_save(self, bug):
         LogUtil.log_start("create_new_jira")
         summary = JiraMonkeySummaryTemplate().substitute(bug_type=bug.bug_type,
                                                          bug_summary=bug.bug_summary)
@@ -541,14 +434,21 @@ class MonkeyApkTester:
             jira_util.jira_content.set_assignee(assignee)
         jira_util.jira_content.set_summary(summary)
         jira_util.jira_content.set_description(description)
-        jira_result = jira_util.create_monkey_task()
-        jira_key = jira_result.get('key')
+        try:
+            jira_result = jira_util.create_monkey_task()
+            jira_key = jira_result.get('key')
+        except (KeyError, ValueError):
+            print "create jira error"
+            jira_key = "error_jira_key_" + str(time())
         print "jira_key", jira_key
         LogUtil.log_end("create_new_jira")
-        return jira_key
+        return jira_key, jira_util.jira_content.summary, jira_util.jira_content.assignee
 
     def add_watchers(self, jira_key, watchers):
         LogUtil.log_start("add_watchers: " + str(watchers))
+        if "error_jira_key" in jira_key:
+            LogUtil.log("error jira key")
+            return
         if watchers is None:
             return
         watchers_list = watchers.split(',')
@@ -563,6 +463,9 @@ class MonkeyApkTester:
 
     def add_comment(self, jira_key, bug):
         LogUtil.log_start("add_comment")
+        if "error_jira_key" in jira_key:
+            LogUtil.log("error jira key")
+            return
         comment = JiraCommentTemplate().substitute(package=bug.bug_package_name,
                                                    bug_type=bug.bug_type,
                                                    device_names=self._device_name,
@@ -575,6 +478,9 @@ class MonkeyApkTester:
 
     def add_attachments(self, jira_key, bug_signature_code, tag):
         LogUtil.log_start("add_attachments")
+        if "error_jira_key" in jira_key:
+            LogUtil.log("error jira key")
+            return
         bug_files = BugDao.get_by_signature_tag(BugFile,
                                                 bug_signature_code=bug_signature_code,
                                                 tag=tag)
@@ -590,7 +496,7 @@ class MonkeyApkTester:
         else:
             print "There is no bug report need uploading"
 
-        mapping_file_name = MonkeyApkTester.CURRENT_PATH + "/mapping.txt"
+        mapping_file_name = self.CURRENT_PATH + "/mapping.txt"
         if os.path.exists(mapping_file_name):
             jira_util.add_attachment(jira_id_or_key=jira_key, file_names=mapping_file_name)
 

@@ -28,20 +28,48 @@ class MonkeyJiraUtil(JIRAUtil):
         def set_component(self, component):
             self.jira_content[COMPONENTS_FIELD] = component
 
+        @property
+        def component(self):
+            return self.jira_content[COMPONENTS_FIELD]
+
         def set_summary(self, summary):
             self.jira_content[SUMMARY_FIELD] = summary
+
+        @property
+        def summary(self):
+            return self.jira_content[SUMMARY_FIELD]
 
         def set_description(self, description):
             self.jira_content[DESCRIPTION_FIELD] = description
 
+        @property
+        def description(self):
+            return self.jira_content[DESCRIPTION_FIELD]
+
         def set_device_name(self, device_name_list):
             self.jira_content[DEVICE_NAME] = device_name_list
+
+        @property
+        def device_name(self):
+            return self.jira_content[DEVICE_NAME]
 
         def set_assignee(self, assignee):
             self.jira_content[ASSIGNEE_FIELD] = assignee
 
+        @property
+        def assignee(self):
+            return self.jira_content[ASSIGNEE_FIELD]
+
         def set_affects_versions(self, version_list):
             self.jira_content[AFFECTS_VERSIONS_FIELD] = version_list
 
+        @property
+        def affects_versions(self):
+            return self.jira_content[AFFECTS_VERSIONS_FIELD]
+
         def set_android_versions(self, android_version_list):
             self.jira_content[ANDROID_VERSION_FIELD] = android_version_list
+
+        @property
+        def android_versions(self):
+            return self.jira_content[ANDROID_VERSION_FIELD]

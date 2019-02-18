@@ -1,3 +1,7 @@
+# -*- encoding: utf-8 -*-
+import datetime
+import sys
+
 import param
 from monkeyTest.MonkeyApkTester import MonkeyApkTester
 from preSetting.PreSetter import PreSetter
@@ -5,11 +9,16 @@ from recoverDevice.DeviceRecover import DeviceRecover
 from skipOOBE.SkipOOBE import SkipOOBE
 from utils.DependenciesUtil import DependenciesUtil
 from utils.LogUtil import LogUtil
+from monkeyReportGenerating.MonkeyReportGenerator import MonkeyReportGenerator
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 class proxy:
     _run = None
     _rst = False
+    _jira_keys = list()
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
@@ -17,6 +26,10 @@ class proxy:
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None
+
+        self.tag = run._param_dict['PACKAGE_NAME'] + "_" + str(datetime.datetime.now())
+        self._rst_fail_msg = None
+        self._test_information = None
 
     def do_script(self):
         LogUtil.log_start("doScript")
@@ -30,10 +43,12 @@ class proxy:
 
         self.install_test_apk()
         if self.get_result() is False:
+            self._rst_fail_msg = "安装待测Apk失败"
             return
 
         self.pre_setting()
         if self.get_result() is False:
+            self._rst_fail_msg = "设置预置条件失败"
             return
 
         self.run_monkey_test()
@@ -98,10 +113,11 @@ class proxy:
         if self._MonkeyApkTester is None:
             self._MonkeyApkTester = MonkeyApkTester(self._run._serial,
                                                     self._run._out_path,
-                                                    self._run._param_dict)
+                                                    self._run._param_dict,
+                                                    self.tag)
         self._MonkeyApkTester.download_test_apk()
         self._MonkeyApkTester.install_downloaded_test_apk()
-        self._rst = self._MonkeyApkTester.get_rst()
+        self._rst, self._jira_keys = self._MonkeyApkTester.get_rst()
         LogUtil.log_end("install_test_apk: " + str(self._rst))
 
     def run_monkey_test(self):
@@ -109,9 +125,10 @@ class proxy:
         if self._MonkeyApkTester is None:
             self._MonkeyApkTester = MonkeyApkTester(self._run._serial,
                                                     self._run._out_path,
-                                                    self._run._param_dict)
+                                                    self._run._param_dict,
+                                                    self.tag)
         self._MonkeyApkTester.run_test()
-        self._rst = self._MonkeyApkTester.get_rst()
+        self._rst, self._jira_keys = self._MonkeyApkTester.get_rst()
         LogUtil.log("Monkey Test Result: " + str(self._rst))
         LogUtil.log_end("Monkey Test")
 
@@ -127,3 +144,12 @@ class proxy:
 
     def get_result(self):
         return self._rst
+
+    def generate_test_report(self):
+        MonkeyReportGenerator(self._run._serial,
+                              self._run._out_path,
+                              self._run._param_dict,
+                              self._rst,
+                              self._rst_fail_msg,
+                              self._jira_keys).generate_result_report()
+        pass

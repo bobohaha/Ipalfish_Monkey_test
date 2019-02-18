@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monkey Test Report</title>
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+    <tr>
+        <td align="center" style="font-family: 微软雅黑,serif;
+            font-size: 26px;
+            font-weight: bold;
+            border-bottom:1px dashed #CCCCCC;
+            color: #255e95;" height="60">Monkey Test Result</td>
+    </tr>
+</table>
+
+<section class="OverviewCard">
+    <div>
+        <h2>Test Result</h2>
+    </div>
+    <div>
+    <table id="over-view-table" width="50%" border="0" cellspacing="1" cellpadding="4" bgcolor="#cccccc" style="margin-top: 13px;font-family: 微软雅黑,serif;font-size: 16px;">
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">测试结果</td>
+            <td id="test-result" style="background: white"></td>
+        </tr>
+        <tr id="fail-reason">
+            <td width="30%" style="text-align:center;background:#e9faff !important;">失败原因</td>
+            <td id="fail-reason-msg" style="background: white"></td>
+        </tr>
+    </table>
+    </div>
+</section>
+
+<section id="TestInformationCard">
+    <div>
+        <h2>Test Information</h2>
+    </div>
+    <div>
+    <table id="" width="50%" border="0" cellspacing="1" cellpadding="4" bgcolor="#cccccc" style="margin-top: 13px;font-family: 微软雅黑,serif;font-size: 16px;">
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">测试包名</td>
+            <td id="test-package" style="background: white"></td>
+        </tr>
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">应用版本</td>
+            <td id="apk-version" style="background: white"></td>
+        </tr>
+        <tr id="apk-build-version">
+            <td width="30%" style="text-align:center;background:#e9faff !important;">Jenkins打包apk的构建ID</td>
+            <td id="apk-build-version-msg" style="background: white"></td>
+        </tr>
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">测试机型</td>
+            <td id="test-device" style="background: white"></td>
+        </tr>
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">手机版本</td>
+            <td id="device-version" style="background: white"></td>
+        </tr>
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">安卓版本</td>
+            <td id="android-version" style="background: white"></td>
+        </tr>
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">Monkey指定参数</td>
+            <td id="monkey-param" style="background: white"></td>
+        </tr>
+        <tr>
+            <td width="30%" style="text-align:center;background:#e9faff !important;">Monkey指定时长</td>
+            <td id="monkey-time" style="background: white"></td>
+        </tr>
+    </table>
+    </div>
+</section>
+
+<section class="IssueDetailsCard">
+    <div>
+        <h2>Issue Details</h2>
+    </div>
+    <div>
+    <table id="issue_table" width="80%" border="0" cellspacing="1" cellpadding="4" bgcolor="#cccccc" style="margin-top: 13px;font-family: 微软雅黑,serif;font-size: 16px;">
+        <tr>
+            <th width="100" style="text-align:center;background:#e9faff !important;">序号</th>
+            <th width="200" style="text-align:center;background:#e9faff !important;">JIRA ID</th>
+            <th style="text-align:center;background:#e9faff !important;">Summary</th>
+        </tr>
+        <tr class="issue-detail">
+            <td style="text-align:center;background: white"></td>
+            <td style="text-align:center;background: white"></td>
+            <td style="background: white"></td>
+        </tr>
+    </table>
+    </div>
+</section>
+</body>
+</html>

@@ -4,7 +4,7 @@ from proxy.params.PackageName import *
 # Jira API
 JIRA_HOST = 'http://jira.n.xiaomi.com'
 JIRA_PORT = 80
-JIRA_ISSUE_LINK = JIRA_HOST + "/browser/{issueIdOrKey}"
+JIRA_ISSUE_LINK = JIRA_HOST + "/browse/{issueIdOrKey}"
 JIRA_CREATE_ISSUE_API = '/rest/api/2/issue/'
 JIRA_EDIT_ISSUE_API = '/rest/api/2/issue/{issueIdOrKey}'
 JIRA_ADD_ATTACHMENT_API = '/rest/api/2/issue/{issueIdOrKey}/attachments'
@@ -191,7 +191,7 @@ def get_component_assignee(package_names):
     if GlobalFileExplorer in packages:
         return COMPONENT_GLOBAL_FILE_EXPLORE, "zhouhongyu"
     if MUSIC in packages:
-        return COMPONENT_GLOBAL_FILE_EXPLORE, "chenpeng7"
+        return COMPONENT_GLOBAL_MUSIC, "chenpeng7"
     if GlobalMIUIHome in packages:
         return COMPONENT_POCO_LAUNCHER, "lishanshan3"
     if FunnyPuriVideo in packages:

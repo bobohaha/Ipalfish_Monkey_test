@@ -129,6 +129,10 @@ class BugDao:
             return None
 
     @staticmethod
+    def get_jiras_by_jira_key(jira_key):
+        return BugDao.get(Jiras, Jiras.jira_id == jira_key)
+
+    @staticmethod
     def get_by_signature(table_name, bug_signature_code):
         try:
             return BugDao.get(table_name, table_name.bug_signature_code == bug_signature_code)
@@ -166,11 +170,22 @@ class BugDao:
             return False
 
     @staticmethod
-    def update_tag(table_name, bug_signature_code, tag):
+    def update_tag_by_signature(table_name, bug_signature_code, tag):
         try:
             return table_name.update(tag=tag).where(table_name.bug_signature_code == bug_signature_code).execute()
         except DoesNotExist:
             return False
+
+    @staticmethod
+    def update_tag_by_issue_id(table_name, issue_id, tag):
+        try:
+            return table_name.update(tag=tag).where(table_name.jira_id == issue_id).execute()
+        except DoesNotExist:
+            return False
+
+    @staticmethod
+    def update_jiras_tag_by_jira_id(jira_id, tag):
+        return BugDao.update_tag_by_issue_id(Jiras, issue_id=jira_id, tag=tag)
 
 
 # if __name__ == "__main__":
