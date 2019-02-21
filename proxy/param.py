@@ -45,7 +45,7 @@ PRESETTING_CASE_PACKAGE = {PackageName.GAME_CENTER: CaseName.GAME_CENTER_PRESETT
                            PackageName.MintBrowser: CaseName.MINT_BROWSER_PRESETTING,
                            PackageName.Download: CaseName.DOWNLOAD_PRESETTING,
                            PackageName.MintLauncher: CaseName.POCO_LAUNCHER_PRESETTING,
-                           PackageName.PersonalAssistant: CaseName.GLOBAL_FILE_EXPLORER_PRESETTING}
+                           PackageName.PersonalAssistant: CaseName.GLOBAL_PERSONAL_ASSISTANT_PRESETTING}
 
 # Package need local resource
 PACKAGE_NEED_LOCAL_RESOURCE = [PackageName.MUSIC,
