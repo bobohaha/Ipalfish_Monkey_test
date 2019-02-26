@@ -63,8 +63,8 @@ class DeviceRecover:
         pass
 
     def is_sysopt_version_newest(self):
-        current_version = ADBUtil.get_installed_package_version(self._device_serial,
-                                                                SYSOPT_PACKAGE_NAME)
+        current_version = ADBUtil.get_installed_package_version_code(self._device_serial,
+                                                                     SYSOPT_PACKAGE_NAME)
         LogUtil.log("check_sysopt_version::current: " + current_version)
         if current_version is None or current_version == "":
             return False

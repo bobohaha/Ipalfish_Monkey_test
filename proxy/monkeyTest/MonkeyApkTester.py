@@ -1,5 +1,11 @@
+# coding=utf-8
 import re
 from time import sleep, time
+import datetime
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 import zipfile
 try:
     import zlib
@@ -12,6 +18,7 @@ from BugDao import BugDao
 from BugModel import *
 from MonkeyJiraTemplates import *
 from MonkeyJiraUtil import *
+from proxy.monkeyReportGenerating.MonkeyReportGenerator import MonkeyReportGenerator
 
 try:
     import xlsxwriter
@@ -48,6 +55,12 @@ class MonkeyApkTester:
     _monkey_command = ""
 
     results = {}
+    results_monkey_time = dict()
+    current_index = 0
+    result_monkey_start_time_field = "monkey_start_time"
+    result_monkey_issue_fst_time = "monkey_fst_time"
+    result_monkey_issue_times = "monkey_issue_times"
+    result_monkey_issue_summary = "monkey_issue_summary"
     bugs = {}
 
     MONKEY_CHECK_INTERVAL_SECOND = 60
@@ -55,6 +68,7 @@ class MonkeyApkTester:
     _MonkeyApkSyncUtil = None
 
     _rst = None
+    _kernel_issues = None
 
     def __init__(self, serial, out_path, param_dict, tag):
         self._device_serial = serial
@@ -73,6 +87,7 @@ class MonkeyApkTester:
         self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._param_dict[param.PACKAGE_NAME])
         self.tag = tag
         self.jira_keys = list()
+        self.bug_seed = dict()
 
         self.OUTPUT_PATH = self.OUTPUT_PATH.format(out_put=self._log_out_path)
         self.RESULT_PATH = self.RESULT_PATH.format(out_put=self._log_out_path)
@@ -139,6 +154,7 @@ class MonkeyApkTester:
         round_count = int(round_str)
 
         for round_index in range(1, round_count + 1):
+            self.current_index = round_index
             self.test(round_index)
 
         self.copy_files_to_output_path()
@@ -152,6 +168,8 @@ class MonkeyApkTester:
         ADBUtil.silence_and_disable_notification_in_device(self._device_serial)
 
         self.init_monkey_command()
+        self.results_monkey_time[self.current_index] = dict()
+        self.results_monkey_time[self.current_index][self.result_monkey_start_time_field] = ADBUtil.get_date_time(self._device_serial)
         self.run_monkey_in_background()
         running_time = self.hold_for_monkey_run_time()
         self.kill_monkey()
@@ -303,6 +321,7 @@ class MonkeyApkTester:
             for line in log_file:
                 if ":Monkey:" in line:
                     self._seed = line.split("seed=")[1].split(" ")[0]
+                    return
         else:
             self._seed = None
 
@@ -358,6 +377,9 @@ class MonkeyApkTester:
                 if bug is False:
                     print("Save bug details error")
                     continue
+                self.collect_bug_seed_info(bug.bug_signature_code)
+                self.collect_bug_time_info(bug.bug_signature_code, bug.bug_time)
+                print BugDao.save_bug_tag(bug.bug_signature_code, self.tag)
                 print BugDao.save_bug_file(bug.bug_signature_code, file_name, self.tag)
                 print BugDao.save_bug_rom(bug.bug_signature_code,
                                           self._device_name,
@@ -368,7 +390,7 @@ class MonkeyApkTester:
             print "there is no bug about {} in {}".format(package, file_name)
 
     def get_rst(self):
-        return self._rst, self.jira_keys
+        return self._rst, self.jira_keys, self._kernel_issues
 
     def analyze_result(self):
         self._rst = len(self.bugs) == 0
@@ -377,7 +399,8 @@ class MonkeyApkTester:
         ADBUtil.rm(self._device_serial, self.DEVICE_OUTPUT_PATH)
         pass
 
-    def get_file_name(self, keyword, file_path="./"):
+    @classmethod
+    def get_file_name(cls, keyword, file_path="./"):
         all_files = os.listdir(file_path)
         for f in all_files:
             if keyword in os.path.basename(f):
@@ -386,21 +409,34 @@ class MonkeyApkTester:
 
     def create_jira_or_add_comment(self):
         LogUtil.log_start("create_jira_or_add_comment")
-        bugs = BugDao.get_by_tag(Bugs, self.tag)
+        bugs = self.get_bugs()
         if bugs is not None:
             LogUtil.log("Having bugs...")
             for bug in bugs:
+                if bug.bug_package_name in (MintBrowser, Browser) \
+                        and bug.bug_type == "ne" \
+                        and bug.bug_summary.startswith("signal "):
+                    LogUtil.log(
+                        "Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
+                    self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary)
+                    continue
                 bug_jira = BugDao.get_by_signature(BugJira, bug_signature_code=bug.bug_signature_code)
+                try:
+                    bug_jira = bug_jira.get()
+                except (DoesNotExist, AttributeError):
+                    bug_jira = None
+                test_info = MonkeyReportGenerator.TestInformation(self._device_serial, self._param_dict)
+                issue_detail = self.get_issue_detail(bug, test_info)
                 if bug_jira is None:
-                    jira_key, jira_summary, jira_assignee = self.create_new_jira_and_save(bug)
+                    jira_key, jira_summary, jira_assignee = self.create_new_jira_and_save(bug, issue_detail)
                     if "error_jira_key" not in jira_key:
                         BugDao.save_jira(jira_key, jira_summary, jira_assignee, self.tag)
                     self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
                 else:
-                    jira_key = bug_jira.get().jira_id
+                    jira_key = bug_jira.jira_id
                     if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
                         MonkeyJiraUtil().change_issue_to_reopen(jira_key)
-                    self.add_comment(jira_key, bug)
+                    self.add_comment(jira_key, issue_detail)
                     BugDao.update_jiras_tag_by_jira_id(jira_key, self.tag)
                 self.jira_keys.append(jira_key)
 
@@ -412,15 +448,12 @@ class MonkeyApkTester:
         LogUtil.log_end("create_jira_or_add_comment")
         pass
 
-    def create_new_jira_and_save(self, bug):
+    def create_new_jira_and_save(self, bug, issue_detail):
         LogUtil.log_start("create_new_jira")
         summary = JiraMonkeySummaryTemplate().substitute(bug_type=bug.bug_type,
+                                                         is_auto='[ Auto Test ]' if self._is_auto_test else '',
                                                          bug_summary=bug.bug_summary)
-        description = JiraMonkeyDescriptionTemplate().substitute(package=bug.bug_package_name,
-                                                                 bug_type=bug.bug_type,
-                                                                 device_names=self._device_name,
-                                                                 rom_versions=self._rom_version,
-                                                                 bug_details=bug.bug_detail)
+        description = issue_detail
         jira_util = MonkeyJiraUtil()
         jira_util.jira_content.set_affects_versions(self._rom_version)
         jira_util.jira_content.set_device_name(self._device_name)
@@ -434,17 +467,22 @@ class MonkeyApkTester:
             jira_util.jira_content.set_assignee(assignee)
         jira_util.jira_content.set_summary(summary)
         jira_util.jira_content.set_description(description)
+        reproductivity = self.get_reproductivity(bug.bug_signature_code)
+        jira_util.jira_content.set_reproductivity(reproductivity)
         try:
             jira_result = jira_util.create_monkey_task()
             jira_key = jira_result.get('key')
         except (KeyError, ValueError):
             print "create jira error"
             jira_key = "error_jira_key_" + str(time())
+
+        jira_key = "error_jira_key_" + str(time()) if jira_key is None else jira_key
         print "jira_key", jira_key
         LogUtil.log_end("create_new_jira")
         return jira_key, jira_util.jira_content.summary, jira_util.jira_content.assignee
 
-    def add_watchers(self, jira_key, watchers):
+    @classmethod
+    def add_watchers(cls, jira_key, watchers):
         LogUtil.log_start("add_watchers: " + str(watchers))
         if "error_jira_key" in jira_key:
             LogUtil.log("error jira key")
@@ -461,16 +499,13 @@ class MonkeyApkTester:
         LogUtil.log_end("add_watchers: " + str(watchers))
         pass
 
-    def add_comment(self, jira_key, bug):
+    @classmethod
+    def add_comment(cls, jira_key, issue_detail):
         LogUtil.log_start("add_comment")
         if "error_jira_key" in jira_key:
             LogUtil.log("error jira key")
             return
-        comment = JiraCommentTemplate().substitute(package=bug.bug_package_name,
-                                                   bug_type=bug.bug_type,
-                                                   device_names=self._device_name,
-                                                   rom_versions=self._rom_version,
-                                                   bug_details=bug.bug_detail)
+        comment = issue_detail
         jira_util = MonkeyJiraUtil()
         jira_util.add_comment(jira_id_or_key=jira_key, comment=comment)
         LogUtil.log_end("add_comment")
@@ -506,25 +541,28 @@ class MonkeyApkTester:
         LogUtil.log_end("add_attachments")
         pass
 
-    def is_file_valid(self, file_name):
+    @classmethod
+    def is_file_valid(cls, file_name):
         if type(file_name).__name__ != "unicode":
             file_name = unicode(file_name, 'utf8')
         file_size = os.path.getsize(file_name)
-        file_size = file_size/float(1024 * 1024)
+        file_size = file_size / float(1024 * 1024)
         file_size = round(file_size, 2)
         return file_size <= 20
 
-    def get_valid_file_name(self, file_name):
-        if self.is_file_valid(file_name):
+    @classmethod
+    def get_valid_file_name(cls, file_name):
+        if cls.is_file_valid(file_name):
             return file_name
         else:
-            zip_file_name = self.compress_file(file_name)
-            if self.is_file_valid(zip_file_name):
+            zip_file_name = cls.compress_file(file_name)
+            if cls.is_file_valid(zip_file_name):
                 return zip_file_name
             else:
                 return False
 
-    def compress_file(self, file_name):
+    @classmethod
+    def compress_file(cls, file_name):
         LogUtil.log_start("compress_file")
         modes = {zipfile.ZIP_DEFLATED: 'deflated', zipfile.ZIP_STORED: 'stored'}
         zip_file_name = file_name + ".zip"
@@ -538,6 +576,149 @@ class MonkeyApkTester:
             LogUtil.log_end("compress_file")
             return zip_file_name
 
+    def get_bugs(self):
+        bugs = list()
+        bug_tag_list = BugDao.get_by_tag(BugTag, self.tag)
+        if bug_tag_list is None:
+            return None
+        else:
+            for bug_tag in bug_tag_list:
+                bug = BugDao.get_by_signature(Bugs, bug_tag.bug_signature_code)
+                if bug is not None:
+                    try:
+                        bugs.append(bug.get())
+                    except DoesNotExist:
+                        LogUtil.log("Some error on getting bug: " + bug_tag.bug_signature_code)
+        return bugs
+        pass
+
+    def get_seed_str(self, bug_signature_code):
+        return str(self.bug_seed[bug_signature_code])
+        pass
+
+    def collect_bug_seed_info(self, bug_signature_code):
+        if bug_signature_code not in self.bug_seed.keys():
+            self.bug_seed[bug_signature_code] = [self._seed]
+        elif self._seed not in self.bug_seed[bug_signature_code]:
+            self.bug_seed[bug_signature_code].append(self._seed)
+        pass
+
+    def collect_bug_time_info(self, bug_signature_code, bug_time):
+        time_year = self.get_time_year(bug_time)
+        bug_time = time_year + "-" + bug_time
+        # collecting bug fst time
+        if self.result_monkey_issue_fst_time not in self.results_monkey_time[self.current_index].keys():
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_fst_time] = dict()
+        if bug_signature_code not in self.results_monkey_time[self.current_index][self.result_monkey_issue_fst_time].keys():
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_fst_time][bug_signature_code] = bug_time
+        else:
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_fst_time][bug_signature_code] = \
+                self.get_previous_time(
+                    self.results_monkey_time[self.current_index][self.result_monkey_issue_fst_time][bug_signature_code],
+                    bug_time)
+
+        # collecting bug times
+        if self.result_monkey_issue_times not in self.results_monkey_time[self.current_index].keys():
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_times] = dict()
+        if bug_signature_code not in self.results_monkey_time[self.current_index][self.result_monkey_issue_times].keys():
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code] = 1
+        else:
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code] += 1
+        pass
+
+    def get_time_year(self, bug_time):
+        time_year = self.results_monkey_time[self.current_index][self.result_monkey_start_time_field].split("-")[0]
+        bug_time = time_year + "-" + bug_time
+        previous_time = self.get_previous_time(self.results_monkey_time[self.current_index][self.result_monkey_start_time_field], bug_time)
+        if self.results_monkey_time[self.current_index][self.result_monkey_start_time_field] == previous_time:
+            return time_year
+        else:
+            return str(int(time_year) + 1)
+        pass
+
+    @classmethod
+    def get_previous_time(cls, time1, time2):
+        time_format = "%Y-%m-%d %H:%M:%S.%f"
+        _time1 = datetime.datetime.strptime(time1, time_format)
+        _time2 = datetime.datetime.strptime(time2, time_format)
+        return time1 if _time2 >= _time1 else time2
+        pass
+
+    def get_issue_detail(self, bug, test_info):
+        monkey_time_detail = ""
+        for round_index in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
+            if self.result_monkey_issue_fst_time not in self.results_monkey_time[round_index].keys():
+                continue
+            elif bug.bug_signature_code not in self.results_monkey_time[round_index][self.result_monkey_issue_fst_time].keys():
+                continue
+            time_detail = JiraIssueTimeDetail().substitute(test_round=round_index,
+                                                           monkey_start_time=self.results_monkey_time[round_index][self.result_monkey_start_time_field],
+                                                           issue_first_time=self.results_monkey_time[round_index][self.result_monkey_issue_fst_time][bug.bug_signature_code],
+                                                           issue_times=str(self.results_monkey_time[round_index][self.result_monkey_issue_times][bug.bug_signature_code])
+                                                           )
+            monkey_time_detail += time_detail
+        description = JiraMonkeyDescriptionTemplate().substitute(package=bug.bug_package_name,
+                                                                 bug_type=bug.bug_type,
+                                                                 device_names=self._device_name,
+                                                                 rom_versions=self._rom_version,
+                                                                 app_version_name=test_info.app_versions,
+                                                                 android_version=test_info.android_version,
+                                                                 auto_test_info=""
+                                                                 if test_info.jenkins_build_num == (None, "None")
+                                                                 else "编译APK的Jenkins ID: " +
+                                                                      str(test_info.jenkins_build_num),
+                                                                 monkey_seed=self.get_seed_str(bug.bug_signature_code),
+                                                                 monkey_param=test_info.monkey_param,
+                                                                 monkey_total_time=test_info.monkey_time,
+                                                                 monkey_time_detail=monkey_time_detail,
+                                                                 bug_details=bug.bug_detail)
+        return description
+        pass
+
+    def get_reproductivity(self, bug_signature_code):
+        bug_count = 0
+        for monkey_round in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
+            if self.result_monkey_issue_times not in self.results_monkey_time[monkey_round].keys():
+                continue
+            elif bug_signature_code not in self.results_monkey_time[monkey_round][self.result_monkey_issue_times].keys():
+                continue
+            bug_count += self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code]
+
+        if bug_count == 1:
+            return REPRODUCTIVITY_ONCE
+        elif bug_count >= 3:
+            return REPRODUCTIVITY_EVERY_TIME
+        else:
+            return REPRODUCTIVITY_SOMETIMES
+        pass
+
+    def save_to_kernel_issues(self, bug_signature_code, bug_summary):
+        if not isinstance(self._kernel_issues, dict):
+            self._kernel_issues = dict()
+
+        for monkey_round in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
+            if self.result_monkey_issue_fst_time not in self.results_monkey_time[monkey_round].keys():
+                continue
+            if bug_signature_code in self.results_monkey_time[monkey_round][self.result_monkey_issue_fst_time].keys():
+                # Init self._kernel_issues[monkey_round]
+                self._kernel_issues[monkey_round] = dict() if monkey_round not in self._kernel_issues.keys() \
+                    else self._kernel_issues[monkey_round]
+                # Save monkey start time
+                self._kernel_issues[monkey_round][self.result_monkey_start_time_field] = self.results_monkey_time[monkey_round][self.result_monkey_start_time_field]
+                # Save issue fst time
+                self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time] = dict() if self.result_monkey_issue_fst_time not in self._kernel_issues[monkey_round].keys() \
+                    else self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time]
+                self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time][bug_signature_code] = self.results_monkey_time[monkey_round][self.result_monkey_issue_fst_time][bug_signature_code]
+                # Save issue times
+                self._kernel_issues[monkey_round][self.result_monkey_issue_times] = dict() if self.result_monkey_issue_times not in self._kernel_issues[monkey_round].keys() \
+                    else self._kernel_issues[monkey_round][self.result_monkey_issue_times]
+                self._kernel_issues[monkey_round][self.result_monkey_issue_times][bug_signature_code] = self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code]
+                # Save issue summary
+                self._kernel_issues[monkey_round][self.result_monkey_issue_summary] = dict() if self.result_monkey_issue_summary not in self._kernel_issues[monkey_round].keys() \
+                    else self._kernel_issues[monkey_round][self.result_monkey_issue_summary]
+
+                self._kernel_issues[monkey_round][self.result_monkey_issue_summary][bug_signature_code] = bug_summary
+        pass
 
 # if __name__ == "__main__":
 #     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"

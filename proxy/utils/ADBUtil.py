@@ -4,6 +4,7 @@ from proxy.utils.PathUtil import PathUtil
 from proxy.usb.UsbUtil import UsbUtil
 import subprocess
 import time
+import datetime
 
 
 class ADBUtil:
@@ -146,7 +147,7 @@ class ADBUtil:
         ADBUtil.execute_shell(serial, command)
 
     @staticmethod
-    def get_installed_package_version(serial, package_name):
+    def get_installed_package_version_code(serial, package_name):
         command = "dumpsys package " + package_name \
                   + " | grep versionCode " \
                     "| awk -F' '  '{print $1}' " \
@@ -155,6 +156,18 @@ class ADBUtil:
         std_result, std_error = ADBUtil.execute_shell(serial, command, True)
         if std_result is not None:
             return std_result.strip()
+        else:
+            return std_error.strip()
+
+    @staticmethod
+    def get_installed_package_version_name(serial, package_name):
+        command = "dumpsys package " + package_name \
+                  + " | grep versionName " \
+                    "| awk -F'=' '{print $2}'"
+        std_result, std_error = ADBUtil.execute_shell(serial, command, True)
+        if std_result is not None:
+            versions = std_result.strip().split("\n")
+            return versions[0]
         else:
             return std_error.strip()
 
@@ -276,5 +289,14 @@ class ADBUtil:
             std_out_1 = std_out_1.split("\n")
             print "1 process name: " + process_name + " | process id: " + str(std_out_1)
             return std_out_1
+        else:
+            return None
+
+    @staticmethod
+    def get_date_time(serial):
+        command = "date '+%Y-%m-%d\ %H:%M:%S'"
+        std_out, std_err = ADBUtil.execute_shell(serial, command, True)
+        if std_out is not None and len(std_out) != 0:
+            return std_out.rstrip() + ".0"
         else:
             return None

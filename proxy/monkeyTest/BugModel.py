@@ -39,6 +39,11 @@ class Bugs(BaseModel):
     tag = CharField()
 
 
+class BugTag(BaseModel):
+    bug_signature_code = CharField()
+    tag = CharField(index=True)
+
+
 class BugRom(BaseModel):
     bug_signature_code = CharField(index=True)
     device_name = CharField()

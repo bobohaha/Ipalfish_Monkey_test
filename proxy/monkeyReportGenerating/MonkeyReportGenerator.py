@@ -12,10 +12,11 @@ sys.setdefaultencoding('utf-8')
 
 
 class MonkeyReportGenerator(object):
-    def __init__(self, serial, out_path, param_dict, rst, rst_fail_msg, jira_keys):
+    def __init__(self, serial, out_path, param_dict, rst, rst_fail_msg, jira_keys, monkey_kernel_issue):
         self.test_result = self.TestResult(rst, rst_fail_msg)
         self.test_information = self.TestInformation(serial, param_dict)
         self.issue_detail = self.IssueDetails(jira_keys)
+        self.kernel_issue_detail = self.KernelIssueDetail(param_dict, monkey_kernel_issue)
 
         self.html = Html()
         self.report_content = self.html.fromfile(PathUtil.get_file_path(__file__) + "/MonkeyReportTemplate.html")
@@ -80,7 +81,8 @@ class MonkeyReportGenerator(object):
             root, issue_section = self.report_content.fst_with_root('section', ('class', 'IssueDetailsCard'))
             root.remove(issue_section)
         else:
-            self.set_issue_detail_tags(issue_count)
+            issue_detail_count = self.get_tag_count('tr', ('class', 'issue-detail'))
+            self.set_issue_detail_tags(issue_count, issue_detail_count, 'tr', ('class', 'issue-detail'))
             self.set_issue_detail_contents()
         LogUtil.log_end("process_issue_details")
         pass
@@ -119,29 +121,71 @@ class MonkeyReportGenerator(object):
 
         return index+1
 
-    def set_issue_detail_tags(self, issue_count):
+    def set_issue_detail_tags(self, issue_count, tag_count, tat_name, tag_attr):
         LogUtil.log_start("set_issue_detail_tags")
-        issue_detail_count = self.get_issue_tag_count()
         ind = 0
-        while ind < issue_count - issue_detail_count:
-            root, issue_detail_item = self.report_content.fst_with_root('tr', ('class', 'issue-detail'))
+        while ind < issue_count - tag_count:
+            root, issue_detail_item = self.report_content.fst_with_root(tat_name, tag_attr)
             issue_detail_target = self.html.feed(str(issue_detail_item))
             root.insert_after(issue_detail_item, issue_detail_target)
             ind += 1
         LogUtil.log_end("set_issue_detail_tags")
 
-    def get_issue_tag_count(self):
+    def get_tag_count(self, tag_name, tag_attr):
         count = 0
-        issue_detail_items = self.report_content.find('tr', ('class', 'issue-detail'))
+        issue_detail_items = self.report_content.find(tag_name, tag_attr)
         for _ in issue_detail_items:
             count += 1
         return count
+
+    def set_kernel_issue_section(self):
+        LogUtil.log_start("set_kernel_issue_section")
+        issue_count = len(self.kernel_issue_detail.kernel_issues)
+        if issue_count == 0:
+            root, issue_section = self.report_content.fst_with_root('section', ('class', 'KernelIssueDetails'))
+            root.remove(issue_section)
+            return
+
+        kernel_issue_tag_count = self.get_tag_count('tr', ('class', 'kernel-issue-detail'))
+        self.set_issue_detail_tags(issue_count, kernel_issue_tag_count, 'tr', ('class', 'kernel-issue-detail'))
+        self.set_kernel_issue_content()
+        LogUtil.log_end("set_kernel_issue_section")
+        pass
+
+    def set_kernel_issue_content(self):
+        LogUtil.log_start("set_kernel_issue_content")
+        issue_detail_items = self.report_content.find('tr', ('class', 'kernel-issue-detail'))
+        item_index = 0
+        for issue_detail_item in issue_detail_items:
+            try:
+                issue_items = issue_detail_item.find('td')
+                kernel_issue_detail = self.kernel_issue_detail.kernel_issues[item_index]
+                item_index += 1
+                index = 1
+                for issue_item in issue_items:
+                    if index == 1:
+                        issue_item.append(Data(str(kernel_issue_detail.monkey_round)))
+                    elif index == 2:
+                        issue_item.append(Data(str(kernel_issue_detail.issue_summary)))
+                    elif index == 3:
+                        issue_item.append(Data(str(kernel_issue_detail.issue_fst_time)))
+                    elif index == 4:
+                        issue_item.append(Data(str(kernel_issue_detail.issue_times)))
+                    elif index == 5:
+                        issue_item.append(Data(str(kernel_issue_detail.monkey_start_time)))
+
+                    index += 1
+            except (ValueError, KeyError):
+                LogUtil.log("set issue detail error")
+        LogUtil.log_end("set_kernel_issue_content")
+        pass
 
     def generate_result_report(self):
         LogUtil.log_start("generate_result_report")
         self.process_test_result()
         self.process_test_information()
         self.process_issue_details()
+        self.set_kernel_issue_section()
         self.report_content.write(self.result_file_path)
         LogUtil.log_end("generate_result_report")
         pass
@@ -172,13 +216,13 @@ class MonkeyReportGenerator(object):
             self.monkey_time = "{loop} loop {minutes} {min_str}". \
                 format(loop=param_dict['MONKEY_ROUND'],
                        minutes=param_dict['MONKEY_ROUND_MAXIMUM_TIME'],
-                       min_str="minute" if param_dict['MONKEY_ROUND_MAXIMUM_TIME'] == 1 else "minutes")
+                       min_str="minute" if int(param_dict['MONKEY_ROUND_MAXIMUM_TIME']) == 1 else "minutes")
 
     class AppVersions:
         def __init__(self, serial, package_names):
             self.app_version = dict()
             for package in package_names:
-                _version = ADBUtil.get_installed_package_version(serial, package)
+                _version = ADBUtil.get_installed_package_version_name(serial, package)
                 self.app_version[package] = _version if _version else "Not installed"
                 pass
 
@@ -196,4 +240,33 @@ class MonkeyReportGenerator(object):
             self.jiras = list()
             for jira_key in jira_keys:
                 self.jiras.append(BugDao.get_jiras_by_jira_key(jira_key))
+            pass
+
+    class KernelIssueDetail:
+        def __init__(self, param, monkey_kernel_issue):
+            self.monkey_round = int(param['MONKEY_ROUND'])
+            self.kernel_issues = list()
+            for index in range(1, self.monkey_round + 1):
+                if monkey_kernel_issue is None:
+                    break
+                if index not in monkey_kernel_issue.keys() or len(monkey_kernel_issue[index].keys()) <= 1:
+                    continue
+                issue_signatures = monkey_kernel_issue[index]['monkey_fst_time'].keys()
+                for sig in issue_signatures:
+                    issue_detail = MonkeyReportGenerator.KernelIssue()
+                    issue_detail.monkey_round = index
+                    issue_detail.monkey_start_time = monkey_kernel_issue[index]['monkey_start_time']
+                    issue_detail.issue_fst_time = monkey_kernel_issue[index]['monkey_fst_time'][sig]
+                    issue_detail.issue_times = monkey_kernel_issue[index]['monkey_issue_times'][sig]
+                    issue_detail.issue_summary = monkey_kernel_issue[index]['monkey_issue_summary'][sig]
+                    self.kernel_issues.append(issue_detail)
+            pass
+
+    class KernelIssue:
+        def __init__(self):
+            self.monkey_round = 0
+            self.monkey_start_time = ""
+            self.issue_fst_time = ""
+            self.issue_times = 0
+            self.issue_summary = ""
             pass

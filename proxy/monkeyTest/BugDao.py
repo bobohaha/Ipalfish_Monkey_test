@@ -36,6 +36,27 @@ class BugDao:
             return False
 
     @staticmethod
+    def save_bug_tag(bug_signature_code, tag):
+        print "save_bug_tag: ", bug_signature_code, tag
+        _bug_tag = BugTag(bug_signature_code=bug_signature_code,
+                          tag=tag)
+        _bug_tag_get_result = BugDao.get(BugTag,
+                                         BugTag.bug_signature_code == bug_signature_code,
+                                         BugTag.tag == tag)
+        try:
+            if _bug_tag_get_result is None:
+                print "bug tag saving..."
+                _bug_tag.save()
+            else:
+                print "bug tag updating..."
+            return _bug_tag
+        except (IntegrityError, DoesNotExist):
+            print "save bug tag \"" + str(_bug_tag) + "\" error"
+            print traceback.format_exc()
+            return False
+        pass
+
+    @staticmethod
     def save_bug_rom(bug_signature_code, device_name, jira_miui_model, rom_version, tag):
         print "save_bug_rom: ", bug_signature_code, device_name, jira_miui_model, rom_version, tag
         _bug_rom = BugRom(bug_signature_code=bug_signature_code,

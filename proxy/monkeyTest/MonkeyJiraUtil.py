@@ -19,7 +19,6 @@ class MonkeyJiraUtil(JIRAUtil):
                 ISSUE_TYPE_FIELD: ISSUE_TYPE_MONKEY,
                 PRIORITY_FIELD: PRIORITY_MONKEY,
                 BUG_TYPE_FIELD: BUG_TYPE_MONKEY,
-                REPRODUCTIVITY_FIELD: REPRODUCTIVITY_MONKEY,
                 TEST_STAGE_FIELD: TEST_STAGE_MONKEY,
                 LABELS_FIELD: [LABEL_GLOBAL_DEFAULT, LABEL_GLOBAL_DEV_CI]
             }
@@ -59,6 +58,13 @@ class MonkeyJiraUtil(JIRAUtil):
         @property
         def assignee(self):
             return self.jira_content[ASSIGNEE_FIELD]
+
+        def set_reproductivity(self, reproductivity):
+            self.jira_content[REPRODUCTIVITY_FIELD] = reproductivity,
+
+        @property
+        def reproductivity(self):
+            return self.jira_content[REPRODUCTIVITY_FIELD]
 
         def set_affects_versions(self, version_list):
             self.jira_content[AFFECTS_VERSIONS_FIELD] = version_list
