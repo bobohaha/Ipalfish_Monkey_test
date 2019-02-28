@@ -47,6 +47,11 @@ class proxy:
             self._rst_fail_msg = "安装待测Apk失败"
             return
 
+        self.check_package_valid()
+        if not self._rst:
+            self._rst_fail_msg = "指定包名不可用"
+            return
+
         self.pre_setting()
         if self.get_result() is False:
             self._rst_fail_msg = "设置预置条件失败"
@@ -120,6 +125,16 @@ class proxy:
         self._MonkeyApkTester.install_downloaded_test_apk()
         self._rst, self._jira_keys, self._kernel_issues = self._MonkeyApkTester.get_rst()
         LogUtil.log_end("install_test_apk: " + str(self._rst))
+
+    def check_package_valid(self):
+        LogUtil.log_start("check_package_valid")
+        if self._MonkeyApkTester is None:
+            self._MonkeyApkTester = MonkeyApkTester(self._run._serial,
+                                                    self._run._out_path,
+                                                    self._run._param_dict,
+                                                    self.tag)
+        self._rst = self._MonkeyApkTester.check_package_valid()
+        LogUtil.log_end("check_package_valid")
 
     def run_monkey_test(self):
         LogUtil.log_start("Monkey Test")

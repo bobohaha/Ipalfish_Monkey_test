@@ -146,6 +146,17 @@ class MonkeyApkTester:
         print command
         os.system(command)
 
+    def check_package_valid(self):
+        package_list = self._param_dict['PACKAGE_NAME'].split(",")
+        for package in package_list:
+            if package.rstrip() == "":
+                continue
+            package_valid = ADBUtil.check_package_exist(self._device_serial, package)
+            if not package_valid:
+                return False
+        return True
+        pass
+
     def run_test(self):
         LogUtil.log_start("run_test")
         self._rst = True

@@ -300,3 +300,12 @@ class ADBUtil:
             return std_out.rstrip() + ".0"
         else:
             return None
+
+    @staticmethod
+    def check_package_exist(serial, package):
+        command = "dumpsys package {pkg} | grep 'versionCode'".format(pkg=package)
+        std_out, std_err = ADBUtil.execute_shell(serial, command, True)
+        if std_out is not None and len(std_out) != 0:
+            return True
+        else:
+            return False
