@@ -20,6 +20,7 @@ class MonkeyJiraUtil(JIRAUtil):
                 PRIORITY_FIELD: PRIORITY_MONKEY,
                 BUG_TYPE_FIELD: BUG_TYPE_MONKEY,
                 TEST_STAGE_FIELD: TEST_STAGE_MONKEY,
+                REPRODUCTIVITY_FIELD: REPRODUCTIVITY_SOMETIMES,
                 LABELS_FIELD: [LABEL_GLOBAL_DEFAULT, LABEL_GLOBAL_DEV_CI]
             }
             pass

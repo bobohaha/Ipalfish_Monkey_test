@@ -30,7 +30,7 @@ class BugDao:
                 print "bug detail updating..."
                 Bugs.update(_bug.__data__).where(Bugs.bug_signature_code == _bug.bug_signature_code).execute()
             return _bug
-        except (DoesNotExist, IntegrityError):
+        except (DoesNotExist, IntegrityError, OperationalError):
             print "save bug detail \"" + str(_bug) + "\" error"
             print traceback.format_exc()
             return False
@@ -50,7 +50,7 @@ class BugDao:
             else:
                 print "bug tag updating..."
             return _bug_tag
-        except (IntegrityError, DoesNotExist):
+        except (IntegrityError, DoesNotExist, OperationalError):
             print "save bug tag \"" + str(_bug_tag) + "\" error"
             print traceback.format_exc()
             return False
@@ -76,7 +76,7 @@ class BugDao:
                 BugRom.update(_bug_rom.__data__)\
                     .where(BugRom.bug_signature_code == _bug_rom.bug_signature_code).execute()
             return _bug_rom
-        except (IntegrityError, DoesNotExist):
+        except (IntegrityError, DoesNotExist, OperationalError):
             print "save bug rom \"" + str(_bug_rom) + "\" error"
             print traceback.format_exc()
             return False
@@ -94,7 +94,7 @@ class BugDao:
             else:
                 print "bug file save successful!!"
             return _bug_file
-        except (IntegrityError, DoesNotExist):
+        except (IntegrityError, DoesNotExist, OperationalError):
             print "bug file save failed: {{bug_signature_code: {0}, file_name: {1}, tag={2}}}" \
                 .format(bug_signature_code, file_name, tag)
             print traceback.format_exc()
@@ -116,7 +116,7 @@ class BugDao:
                 print "jira updating..."
                 Jiras.update(_jira_issue.__data__).where(Jiras.jira_id == _jira_issue.jira_id).execute()
             return _jira_issue
-        except (IntegrityError, DoesNotExist):
+        except (IntegrityError, DoesNotExist, OperationalError):
             print "save jira \"" + str(_jira_issue) + "\" error"
             print traceback.format_exc()
             return False
@@ -137,7 +137,7 @@ class BugDao:
                 BugJira.update(_bug_jira.__data__)\
                     .where(BugJira.bug_signature_code == _bug_jira.bug_signature_code).execute()
             return _bug_jira
-        except (IntegrityError, DoesNotExist):
+        except (IntegrityError, DoesNotExist, OperationalError):
             print "save bug jira \"" + str(_bug_jira) + "\" error"
             print traceback.format_exc()
             return False
@@ -177,7 +177,7 @@ class BugDao:
             sq = sq.filter(**filters)
         try:
             print "sq.get():", sq.get()
-        except DoesNotExist:
+        except (DoesNotExist, OperationalError):
             print "BugDao.get(" + table_name.__name__ + ", " + str(query) + "," + str(filters) + "): DoesNotExist <<"
             return None
         return sq
@@ -187,21 +187,21 @@ class BugDao:
         print "update: ", table_name.__name__
         try:
             return table_name.update(__data, **kwargs)
-        except DoesNotExist:
+        except (DoesNotExist, OperationalError):
             return False
 
     @staticmethod
     def update_tag_by_signature(table_name, bug_signature_code, tag):
         try:
             return table_name.update(tag=tag).where(table_name.bug_signature_code == bug_signature_code).execute()
-        except DoesNotExist:
+        except (DoesNotExist, OperationalError):
             return False
 
     @staticmethod
     def update_tag_by_issue_id(table_name, issue_id, tag):
         try:
             return table_name.update(tag=tag).where(table_name.jira_id == issue_id).execute()
-        except DoesNotExist:
+        except (DoesNotExist, OperationalError):
             return False
 
     @staticmethod

@@ -479,7 +479,7 @@ class MonkeyApkTester:
         jira_util.jira_content.set_summary(summary)
         jira_util.jira_content.set_description(description)
         reproductivity = self.get_reproductivity(bug.bug_signature_code)
-        jira_util.jira_content.set_reproductivity(reproductivity)
+        # jira_util.jira_content.set_reproductivity(reproductivity)
         try:
             jira_result = jira_util.create_monkey_task()
             jira_key = jira_result.get('key')
