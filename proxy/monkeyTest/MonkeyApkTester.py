@@ -657,16 +657,17 @@ class MonkeyApkTester:
                                                            issue_times=str(self.results_monkey_time[round_index][self.result_monkey_issue_times][bug.bug_signature_code])
                                                            )
             monkey_time_detail += time_detail
-        description = JiraMonkeyDescriptionTemplate().substitute(package=bug.bug_package_name,
+        test_introduce = AUTO_TEST_INTRODUCTION if self._is_auto_test else RD_TEST_INTRODUCTION.format(tester=self._param_dict['TESTER'].rstrip())
+        description = JiraMonkeyDescriptionTemplate().substitute(test_introduce_title=test_introduce,
+                                                                 package=bug.bug_package_name,
                                                                  bug_type=bug.bug_type,
                                                                  device_names=self._device_name,
                                                                  rom_versions=self._rom_version,
                                                                  app_version_name=test_info.app_versions,
                                                                  android_version=test_info.android_version,
-                                                                 auto_test_info=""
-                                                                 if test_info.jenkins_build_num == (None, "None")
-                                                                 else "编译APK的Jenkins ID: " +
-                                                                      str(test_info.jenkins_build_num),
+                                                                 auto_test_info="编译APK的Jenkins ID: " +
+                                                                                str(test_info.jenkins_build_num)
+                                                                 if self._is_auto_test else "",
                                                                  monkey_seed=self.get_seed_str(bug.bug_signature_code),
                                                                  monkey_param=test_info.monkey_param,
                                                                  monkey_total_time=test_info.monkey_time,
