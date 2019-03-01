@@ -61,7 +61,7 @@ class MonkeyJiraUtil(JIRAUtil):
             return self.jira_content[ASSIGNEE_FIELD]
 
         def set_reproductivity(self, reproductivity):
-            self.jira_content[REPRODUCTIVITY_FIELD] = reproductivity,
+            self.jira_content.update({REPRODUCTIVITY_FIELD: reproductivity})
 
         @property
         def reproductivity(self):
