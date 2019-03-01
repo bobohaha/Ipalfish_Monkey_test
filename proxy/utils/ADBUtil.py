@@ -258,6 +258,7 @@ class ADBUtil:
     def execute_shell(serial, shell_command, output=False):
         command = "adb -s " + serial + " shell " + shell_command
         print(command)
+        UsbUtil.make_sure_usb_connected(serial)
         if output is False:
             os.system(command)
             return
