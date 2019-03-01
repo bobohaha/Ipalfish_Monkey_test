@@ -307,10 +307,18 @@ class MonkeyApkTester:
         output = os.popen(command)
         result = output.read().strip()
 
+        command_traces = "ls " + self.OUTPUT_ANR_PATH + "round_" + str(round_index) + "/traces*"
+        output = os.popen(command_traces)
+        result_traces = output.read().strip()
+
+        traces_file_list = None
+        if not result_traces + "x" == "x":
+            traces_file_list = result_traces.split("\n")
+
         anr_str = ""
         if not result + "x" == "x":
             file_list = result.split("\n")
-            anr_str = self.analyze_bugs(file_list, self.BUG_TYPE_ANR)
+            anr_str = self.analyze_bugs(file_list, self.BUG_TYPE_ANR, trace_files=traces_file_list)
         else:
             pass
 
@@ -344,19 +352,21 @@ class MonkeyApkTester:
 
         LogUtil.log_end("move_result")
 
-    def analyze_bugs(self, bug_files, bug_type):
+    def analyze_bugs(self, bug_files, bug_type, trace_files=None):
         LogUtil.log_start("analyze_bugs")
         print bug_files
         result = ""
         for filename in bug_files:
             if filename:
-                self.analysis_bug_bas(filename)
                 bug = None
                 if self.BUG_TYPE_CRASH == bug_type:
                     bug = self.get_crash_info(filename)
                 elif self.BUG_TYPE_ANR == bug_type:
                     bug = self.get_anr_info(filename)
+                    if trace_files is not None:
+                        filename = [filename] + trace_files
 
+                self.analysis_bug_bas(filename)
                 if bug in self.bugs:
                     self.bugs[bug] = self.bugs[bug] + 1
                 else:
@@ -381,6 +391,11 @@ class MonkeyApkTester:
 
     def analyzing_and_saving(self, file_name, package):
         bug_results = BasUtil().analysis(file_name, package)
+        if isinstance(file_name, list):
+            file_names = ""
+            for name in file_name:
+                file_names += name + ","
+            file_name = file_names[:-1]
         if isinstance(bug_results, list) and len(bug_results) > 0:
             self._rst = False
             for bug_res in bug_results:
@@ -445,6 +460,7 @@ class MonkeyApkTester:
                     if "error_jira_key" not in jira_key:
                         BugDao.save_jira(jira_key, jira_summary, jira_assignee, self.tag)
                     self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
+
                 else:
                     jira_key = bug_jira.jira_id
                     if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
@@ -534,9 +550,13 @@ class MonkeyApkTester:
                                                 tag=tag)
         jira_util = MonkeyJiraUtil()
         if bug_files is not None:
+            bug_files_all = list()
             for bug_file in bug_files:
-                print "uploading file: " + bug_file.file_name
-                file_name = self.get_valid_file_name(bug_file.file_name)
+                bug_files_all = bug_files_all + bug_file.file_name.split(",")
+            bug_files = list(set(bug_files_all))
+            for file_name in bug_files:
+                print "uploading file: " + file_name
+                file_name = self.get_valid_file_name(file_name)
                 if file_name is False:
                     continue
                 jira_util.add_attachment(jira_id_or_key=jira_key,

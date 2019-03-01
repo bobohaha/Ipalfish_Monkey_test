@@ -208,7 +208,7 @@ class JIRAUtil:
             self._jira_session.add_header('Accept', 'application/json')
             self._jira_session.add_header('Content-type', 'application/json')
             r = self._jira_session.post(_url=create_issue_url, _data=json.dumps(self._jira_data))
-            print r, r.status_code
+            print r, r.status_code, r.content
             if r.status_code >= 300 or r.status_code < 200:
                 return r.json()
             else:

@@ -13,11 +13,15 @@ class BugDao:
             print "Not valid bug"
             return False
 
+        _bug_summary = bug_detail_dict['summary']
+        if len(_bug_summary) > 150:
+            _bug_summary = _bug_summary[:150] + "..."
+
         _bug = Bugs(bug_detail=bug_detail_dict['det'],
                     bug_signature_code=bug_detail_dict['dgt'],
                     bug_pid=bug_detail_dict['pid'],
                     bug_package_name=bug_detail_dict['pkgName'],
-                    bug_summary=bug_detail_dict['summary'],
+                    bug_summary=_bug_summary,
                     bug_time=bug_detail_dict['time'],
                     bug_type=bug_detail_dict['type'],
                     tag=tag)
