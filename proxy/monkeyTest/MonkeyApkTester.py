@@ -434,6 +434,8 @@ class MonkeyApkTester:
                 bug_jira = BugDao.get_by_signature(BugJira, bug_signature_code=bug.bug_signature_code)
                 try:
                     bug_jira = bug_jira.get()
+                    if "error_jira_key" in bug_jira.jira_id:
+                        bug_jira = None
                 except (DoesNotExist, AttributeError):
                     bug_jira = None
                 test_info = MonkeyReportGenerator.TestInformation(self._device_serial, self._param_dict)
