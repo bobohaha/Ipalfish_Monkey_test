@@ -5,6 +5,7 @@ from proxy.utils.ehp_pyhon2 import *
 from proxy.utils.JIRAParam import JIRA_ISSUE_LINK
 from proxy.utils.PathUtil import PathUtil
 from proxy.utils.LogUtil import LogUtil
+from proxy.monkeyTest.BugModel import Jiras
 
 import sys
 reload(sys)
@@ -76,7 +77,7 @@ class MonkeyReportGenerator(object):
     def process_issue_details(self):
         LogUtil.log_start("process_issue_details")
         issue_count = len(self.issue_detail.jiras) if self.issue_detail.jiras is not None else 0
-        if self.issue_detail.jiras is None or issue_count == 0:
+        if issue_count == 0:
             LogUtil.log("There is no issue...")
             root, issue_section = self.report_content.fst_with_root('section', ('class', 'IssueDetailsCard'))
             root.remove(issue_section)
@@ -90,36 +91,26 @@ class MonkeyReportGenerator(object):
     def set_issue_detail_contents(self):
         LogUtil.log_start("set_issue_detail_contents")
         issue_detail_items = self.report_content.find('tr', ('class', 'issue-detail'))
-        ind = 0
-        print type(issue_detail_items)
+        issue_no = 1
         for issue_detail_item in issue_detail_items:
             try:
                 issue_items = issue_detail_item.find('td')
-                index = 1
+                td_item_index = 0
                 for issue_item in issue_items:
-                    issue_info = self.issue_detail.jiras[0].get() if self.issue_detail.jiras[0] is not None else None
-                    index = self.set_issue_info(index, issue_item, ind+1, issue_info)
+                    issue_info = self.issue_detail.jiras[issue_no-1]
+                    if td_item_index == 0:
+                        issue_item.append(Data(str(issue_no)))
+                    if td_item_index == 1:
+                        issue_item.insert(0, self.JiraKey(issue_info.jira_id))
+                    if td_item_index == 2:
+                        issue_item.append(Data(issue_info.jira_summary))
+                    td_item_index += 1
 
-                self.issue_detail.jiras = self.issue_detail.jiras[1:]
-                ind += 1
+                issue_no += 1
             except (ValueError, KeyError):
                 LogUtil.log("set issue detail error")
         LogUtil.log_end("set_issue_detail_contents")
         pass
-
-    def set_issue_info(self, index, issue_item, issue_no, issue_jira):
-        if issue_item.text() == "" and index == 1:
-            issue_item.append(Data(str(issue_no)))
-
-        if issue_item.text() == "" and index == 2:
-            jira_id = issue_jira.jira_id if issue_jira is not None else "error jira key"
-            issue_item.insert(0, self.JiraKey(jira_id))
-
-        if issue_item.text() == "" and index == 3:
-            jira_summary = issue_jira.jira_summary if issue_jira is not None else "error jira summary"
-            issue_item.append(Data(jira_summary))
-
-        return index+1
 
     def set_issue_detail_tags(self, issue_count, tag_count, tat_name, tag_attr):
         LogUtil.log_start("set_issue_detail_tags")
@@ -239,7 +230,10 @@ class MonkeyReportGenerator(object):
         def __init__(self, jira_keys):
             self.jiras = list()
             for jira_key in jira_keys:
-                self.jiras.append(BugDao.get_jiras_by_jira_key(jira_key))
+                _jira = BugDao.get_jira_record_by_jira_key(jira_key)
+                if _jira is None:
+                    _jira = Jiras(jira_id=jira_key, jira_summary="", jira_assignee="", tag="")
+                self.jiras.append(_jira)
             pass
 
     class KernelIssueDetail:

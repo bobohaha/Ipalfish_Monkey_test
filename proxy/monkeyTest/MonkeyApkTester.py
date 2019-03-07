@@ -36,6 +36,9 @@ from proxy.utils.PathUtil import PathUtil
 from proxy.utils.PropUtil import PropUtil
 
 
+SLEEP_TIME_2MIN = 60 * 2
+
+
 class MonkeyApkTester:
     CURRENT_PATH = PathUtil.get_file_path(__file__)
 
@@ -439,45 +442,73 @@ class MonkeyApkTester:
         if bugs is not None:
             LogUtil.log("Having bugs...")
             for bug in bugs:
-                if bug.bug_package_name in (MintBrowser, Browser) \
-                        and bug.bug_type == "ne" \
-                        and bug.bug_summary.startswith("signal "):
-                    LogUtil.log(
-                        "Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
+                if bug.bug_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
+                    LogUtil.log("Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
                     self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary)
                     continue
-                bug_jira = BugDao.get_by_signature(BugJira, bug_signature_code=bug.bug_signature_code)
-                try:
-                    bug_jira = bug_jira.get()
-                    if "error_jira_key" in bug_jira.jira_id:
-                        bug_jira = None
-                except (DoesNotExist, AttributeError):
-                    bug_jira = None
+
                 test_info = MonkeyReportGenerator.TestInformation(self._device_serial, self._param_dict)
                 issue_detail = self.get_issue_detail(bug, test_info)
-                if bug_jira is None:
-                    jira_key, jira_summary, jira_assignee = self.create_new_jira_and_save(bug, issue_detail)
-                    if "error_jira_key" not in jira_key:
-                        BugDao.save_jira(jira_key, jira_summary, jira_assignee, self.tag)
-                    self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
 
-                else:
-                    jira_key = bug_jira.jira_id
-                    if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
-                        MonkeyJiraUtil().change_issue_to_reopen(jira_key)
-                    self.add_comment(jira_key, issue_detail)
-                    BugDao.update_jiras_tag_by_jira_id(jira_key, self.tag)
+                add_result = False
+                jira_key = "error_jira_key" + str(time())
+                try:
+                    add_result = BugDao.add_bug_record(bug.bug_signature_code, '', self.tag)
+                    print "add result: " + str(add_result)
+                    jira_summary = ""
+                    jira_assignee = ""
+                    if add_result:
+                        try:
+                            jira_key, jira_summary, jira_assignee = self.create_new_jira(bug, issue_detail)
+                        except Exception, why:
+                            print "create new jira error: ", why
+                            BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
+
+                        if "error_jira_key" not in jira_key:
+                            if not BugDao.add_jira_key_to_bug_record(bug.bug_signature_code, jira_key):
+                                BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
+                            BugDao.save_jira(jira_key, jira_summary, jira_assignee, self.tag)
+                        else:
+                            LogUtil.log("Create new jira error.........")
+                            BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
+
+                        self.add_watchers(jira_key, self._param_dict['WATCHERS'])
+                except Exception, why:
+                    print "Other error in create, save jira or add watchers: ", why
+
+                if not add_result:
+                    retry_times = 3
+                    bug_jira = None
+                    while retry_times > 0:
+                        bug_jira = BugDao.get_by_signature(BugJira, bug.bug_signature_code)
+                        try:
+                            bug_jira = bug_jira.get()
+                        except DoesNotExist:
+                            bug_jira = None
+
+                        if bug_jira is not None and bug_jira.jira_id != "":
+                            jira_key = bug_jira.jira_id
+                            if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
+                                MonkeyJiraUtil().change_issue_to_reopen(jira_key)
+                            self.add_comment(jira_key, issue_detail)
+                            break
+
+                        sleep(SLEEP_TIME_2MIN)
+                        retry_times -= 1
+
+                    if bug_jira is None or bug_jira.jira_id == "":
+                        jira_key = "error_jira_key_add_comment_" + str(time())
+                        LogUtil.log("Add comment error.......")
+
                 self.jira_keys.append(jira_key)
-
                 self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
-                BugDao.save_bug_jira(bug.bug_signature_code, jira_key, self.tag)
         else:
             print "There is no bug found!!"
 
         LogUtil.log_end("create_jira_or_add_comment")
         pass
 
-    def create_new_jira_and_save(self, bug, issue_detail):
+    def create_new_jira(self, bug, issue_detail):
         LogUtil.log_start("create_new_jira")
         summary = JiraMonkeySummaryTemplate().substitute(bug_type=bug.bug_type,
                                                          is_auto='[ Auto Test ]' if self._is_auto_test else '',
@@ -503,9 +534,10 @@ class MonkeyApkTester:
             jira_key = jira_result.get('key')
         except (KeyError, ValueError):
             print "create jira error"
-            jira_key = "error_jira_key_" + str(time())
+            jira_key = "error_jira_key_create_jira_" + str(time())
 
-        jira_key = "error_jira_key_" + str(time()) if jira_key is None else jira_key
+        if jira_key is None:
+            jira_key = "error_jira_key_create_jira_" + str(time())
         print "jira_key", jira_key
         LogUtil.log_end("create_new_jira")
         return jira_key, jira_util.jira_content.summary, jira_util.jira_content.assignee
@@ -516,13 +548,13 @@ class MonkeyApkTester:
         if "error_jira_key" in jira_key:
             LogUtil.log("error jira key")
             return
-        if watchers is None:
+        if watchers is None or watchers == "None":
             return
         watchers_list = watchers.split(',')
         jira_util = MonkeyJiraUtil()
         for watcher in watchers_list:
             print "adding watcher: " + watcher
-            if watcher is None:
+            if watcher is None or watcher == "None":
                 continue
             jira_util.add_watchers(jira_id_or_key=jira_key, watchers=watcher)
         LogUtil.log_end("add_watchers: " + str(watchers))

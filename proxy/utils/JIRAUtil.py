@@ -196,6 +196,7 @@ class JIRAUtil:
             self.set_jira_label(self._jira_content[JIRAParam.LABELS_FIELD])
         pass
 
+    #  Actually edit issue is not available
     def create_or_edit_issue(self, jira_content=None, jira_id_or_key=None):
         if jira_content is not None:
             self.set_jira_content(jira_content)
@@ -213,18 +214,22 @@ class JIRAUtil:
                 return r.json()
             else:
                 return r.json()
-        except Exception:
+        except Exception, why:
+            print "create issue error", why
             print traceback.format_exc()
 
-    def get_jira_id(self, result):
+    @classmethod
+    def get_jira_id(cls, result):
         jira_id = result.get('id')
         return jira_id
 
-    def get_jira_key(self, result):
+    @classmethod
+    def get_jira_key(cls, result):
         jira_key = result.get('key')
         return jira_key
 
-    def get_jira_site(self, jira_key):
+    @classmethod
+    def get_jira_site(cls, jira_key):
         jira_site = JIRAParam.JIRA_ISSUE_LINK.format(issueIdOrKey=jira_key)
         return jira_site
 
@@ -247,7 +252,8 @@ class JIRAUtil:
             r = self._jira_session.post(_url=add_attachment_jira_url, files=files)
             print r, r.status_code, r.content
             return r.status_code == 200
-        except Exception:
+        except Exception, why:
+            print "add_attachment error: ", why
             print traceback.format_exc()
 
     def add_comment(self, jira_id_or_key, comment):
@@ -263,7 +269,8 @@ class JIRAUtil:
             r = self._jira_session.post(_url=add_comment_jira_url, _json=post_data)
             print r, r.status_code, r.content
             return 200 <= r.status_code < 300
-        except Exception:
+        except Exception, why:
+            print "add_comment error", why
             print traceback.format_exc()
 
     def add_watchers(self, jira_id_or_key, watchers):
@@ -276,7 +283,8 @@ class JIRAUtil:
             r = self._jira_session.post(add_watchers_jira_url, _data=post_data)
             print r, r.status_code, r.content
             return r.status_code == 204
-        except Exception:
+        except Exception, why:
+            print "add_watchers error: ", why
             print traceback.format_exc()
 
     def is_can_reopen_issue(self, jira_id_or_key):
@@ -292,12 +300,10 @@ class JIRAUtil:
                 for transition in transitions:
                     if transition['name'] == "Reopen Issue":
                         return True
-                return False
-            else:
-                return False
-        except:
+        except Exception, why:
+            print "is_can_reopen_issue error: ", why
             print traceback.format_exc()
-            return False
+        return False
 
     def change_issue_to_reopen(self, jira_id_or_key):
         get_transition_url = '{}:{}{}'.format(JIRAParam.JIRA_HOST,
@@ -313,8 +319,10 @@ class JIRAUtil:
             r = self._jira_session.post(get_transition_url, _data=post_data)
             print r, r.status_code, r.content
             return r.status_code == 204
-        except:
+        except Exception, why:
+            print "change_issue_to_reopen error: ", why
             print traceback.format_exc()
+        return False
 
     def open_jira_task(self, jira_content=None):
         self.set_jira_issue_type(JIRAParam.ISSUE_TYPE_TASK)

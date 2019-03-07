@@ -154,8 +154,11 @@ class BugDao:
             return None
 
     @staticmethod
-    def get_jiras_by_jira_key(jira_key):
-        return BugDao.get(Jiras, Jiras.jira_id == jira_key)
+    def get_jira_record_by_jira_key(jira_key):
+        try:
+            return BugDao.get(Jiras, Jiras.jira_id == jira_key).get()
+        except DoesNotExist:
+            return None
 
     @staticmethod
     def get_by_signature(table_name, bug_signature_code):
@@ -211,6 +214,35 @@ class BugDao:
     @staticmethod
     def update_jiras_tag_by_jira_id(jira_id, tag):
         return BugDao.update_tag_by_issue_id(Jiras, issue_id=jira_id, tag=tag)
+
+    @classmethod
+    def add_bug_record(cls, bug_signature_code, jira_key, tag):
+        _bug_record = BugJira(bug_signature_code=bug_signature_code, jira_id=jira_key, tag=tag)
+        try:
+            _bug_record.save()
+            return True
+        except IntegrityError, why:
+            print "add_bug_record error", why
+            return False
+        pass
+
+    @classmethod
+    def add_jira_key_to_bug_record(cls, bug_signature_code, jira_key):
+        try:
+            BugJira.update(jira_id=jira_key).where(BugJira.bug_signature_code == bug_signature_code).execute()
+            return True
+        except Exception, why:
+            print "add_jira_key_to_bug_record error: ", why
+            return False
+        pass
+
+    @classmethod
+    def delete_record_from_bug_jira_table(cls, bug_signature_code):
+        try:
+            BugJira.delete().where(BugJira.bug_signature_code == bug_signature_code).execute()
+        except Exception, why:
+            print "delete_record_from_bug_jira_table error: ", why
+        pass
 
 
 # if __name__ == "__main__":
