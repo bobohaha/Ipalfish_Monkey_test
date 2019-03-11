@@ -54,7 +54,7 @@ class BugRom(BaseModel):
 
 class BugFile(BaseModel):
     bug_signature_code = CharField(index=True)
-    file_name = CharField()
+    file_name = TextField()
     tag = CharField()
 
 

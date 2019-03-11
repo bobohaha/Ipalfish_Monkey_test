@@ -49,8 +49,8 @@ class BasUtil:
         else:
             file_list = []
             for file_name in file_names:
-                file_list.append(open(file_name, "rb"))
-            self.files["file"] = file_list
+                file_list.append(('file', open(file_name, "rb")))
+            self.files = file_list
 
     def analysis(self, file_names, package=None):
         self.add_files_to_requests(file_names)
