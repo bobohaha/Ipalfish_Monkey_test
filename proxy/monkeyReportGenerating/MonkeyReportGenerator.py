@@ -13,11 +13,12 @@ sys.setdefaultencoding('utf-8')
 
 
 class MonkeyReportGenerator(object):
-    def __init__(self, serial, out_path, param_dict, rst, rst_fail_msg, jira_keys, monkey_kernel_issue):
+    def __init__(self, serial, out_path, param_dict, rst, rst_fail_msg, jira_keys, monkey_kernel_issue, monkey_not_submit_issues):
         self.test_result = self.TestResult(rst, rst_fail_msg)
         self.test_information = self.TestInformation(serial, param_dict)
-        self.issue_detail = self.IssueDetails(jira_keys)
-        self.kernel_issue_detail = self.KernelIssueDetail(param_dict, monkey_kernel_issue)
+        self.issue_detail = self.SubmittedIssues(jira_keys)
+        self.kernel_issue_detail = self.NotSubmittedIssues(param_dict, monkey_kernel_issue)
+        self.not_submitted_issue_detail = self.NotSubmittedIssues(param_dict, monkey_not_submit_issues)
 
         self.html = Html()
         self.report_content = self.html.fromfile(PathUtil.get_file_path(__file__) + "/MonkeyReportTemplate.html")
@@ -129,46 +130,46 @@ class MonkeyReportGenerator(object):
             count += 1
         return count
 
-    def set_kernel_issue_section(self):
-        LogUtil.log_start("set_kernel_issue_section")
-        issue_count = len(self.kernel_issue_detail.kernel_issues)
+    def set_not_submitted_issue_section(self, issues):
+        LogUtil.log_start("set_not_submitted_issue_section")
+        issue_count = len(issues)
         if issue_count == 0:
-            root, issue_section = self.report_content.fst_with_root('section', ('class', 'KernelIssueDetails'))
+            root, issue_section = self.report_content.fst_with_root('section', ('class', 'NotSubmittedIssueDetails'))
             root.remove(issue_section)
             return
 
-        kernel_issue_tag_count = self.get_tag_count('tr', ('class', 'kernel-issue-detail'))
-        self.set_issue_detail_tags(issue_count, kernel_issue_tag_count, 'tr', ('class', 'kernel-issue-detail'))
-        self.set_kernel_issue_content()
-        LogUtil.log_end("set_kernel_issue_section")
+        _issue_tag_count = self.get_tag_count('tr', ('class', 'not-submitted-issue-detail'))
+        self.set_issue_detail_tags(issue_count, _issue_tag_count, 'tr', ('class', 'not-submitted-issue-detail'))
+        self.set_not_submitted_issue_content(issues)
+        LogUtil.log_end("set_not_submitted_issue_section")
         pass
 
-    def set_kernel_issue_content(self):
-        LogUtil.log_start("set_kernel_issue_content")
-        issue_detail_items = self.report_content.find('tr', ('class', 'kernel-issue-detail'))
+    def set_not_submitted_issue_content(self, issues):
+        LogUtil.log_start("set_not_submitted_issue_content")
+        issue_detail_items = self.report_content.find('tr', ('class', 'not-submitted-issue-detail'))
         item_index = 0
         for issue_detail_item in issue_detail_items:
             try:
                 issue_items = issue_detail_item.find('td')
-                kernel_issue_detail = self.kernel_issue_detail.kernel_issues[item_index]
+                not_submitted_issue_detail = issues[item_index]
                 item_index += 1
                 index = 1
                 for issue_item in issue_items:
                     if index == 1:
-                        issue_item.append(Data(str(kernel_issue_detail.monkey_round)))
+                        issue_item.append(Data(str(not_submitted_issue_detail.monkey_round)))
                     elif index == 2:
-                        issue_item.append(Data(str(kernel_issue_detail.issue_summary)))
+                        issue_item.append(Data(str(not_submitted_issue_detail.issue_summary)))
                     elif index == 3:
-                        issue_item.append(Data(str(kernel_issue_detail.issue_fst_time)))
+                        issue_item.append(Data(str(not_submitted_issue_detail.issue_fst_time)))
                     elif index == 4:
-                        issue_item.append(Data(str(kernel_issue_detail.issue_times)))
+                        issue_item.append(Data(str(not_submitted_issue_detail.issue_times)))
                     elif index == 5:
-                        issue_item.append(Data(str(kernel_issue_detail.monkey_start_time)))
+                        issue_item.append(Data(str(not_submitted_issue_detail.monkey_start_time)))
 
                     index += 1
             except (ValueError, KeyError):
                 LogUtil.log("set issue detail error")
-        LogUtil.log_end("set_kernel_issue_content")
+        LogUtil.log_end("set_not_submitted_issue_content")
         pass
 
     def generate_result_report(self):
@@ -176,7 +177,8 @@ class MonkeyReportGenerator(object):
         self.process_test_result()
         self.process_test_information()
         self.process_issue_details()
-        self.set_kernel_issue_section()
+        all_the_not_submitted_issues = self.not_submitted_issue_detail.issues + self.kernel_issue_detail.issues
+        self.set_not_submitted_issue_section(all_the_not_submitted_issues)
         self.report_content.write(self.result_file_path)
         LogUtil.log_end("generate_result_report")
         pass
@@ -226,7 +228,7 @@ class MonkeyReportGenerator(object):
             app_versions_str.strip("\n")
             return app_versions_str
 
-    class IssueDetails:
+    class SubmittedIssues:
         def __init__(self, jira_keys):
             self.jiras = list()
             for jira_key in jira_keys:
@@ -236,10 +238,10 @@ class MonkeyReportGenerator(object):
                 self.jiras.append(_jira)
             pass
 
-    class KernelIssueDetail:
+    class NotSubmittedIssues:
         def __init__(self, param, monkey_kernel_issue):
             self.monkey_round = int(param['MONKEY_ROUND'])
-            self.kernel_issues = list()
+            self.issues = list()
             for index in range(1, self.monkey_round + 1):
                 if monkey_kernel_issue is None:
                     break
@@ -247,16 +249,16 @@ class MonkeyReportGenerator(object):
                     continue
                 issue_signatures = monkey_kernel_issue[index]['monkey_fst_time'].keys()
                 for sig in issue_signatures:
-                    issue_detail = MonkeyReportGenerator.KernelIssue()
+                    issue_detail = MonkeyReportGenerator.IssueInformation()
                     issue_detail.monkey_round = index
                     issue_detail.monkey_start_time = monkey_kernel_issue[index]['monkey_start_time']
                     issue_detail.issue_fst_time = monkey_kernel_issue[index]['monkey_fst_time'][sig]
                     issue_detail.issue_times = monkey_kernel_issue[index]['monkey_issue_times'][sig]
                     issue_detail.issue_summary = monkey_kernel_issue[index]['monkey_issue_summary'][sig]
-                    self.kernel_issues.append(issue_detail)
+                    self.issues.append(issue_detail)
             pass
 
-    class KernelIssue:
+    class IssueInformation:
         def __init__(self):
             self.monkey_round = 0
             self.monkey_start_time = ""

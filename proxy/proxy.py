@@ -31,6 +31,7 @@ class proxy:
         self._rst_fail_msg = None
         self._test_information = None
         self._kernel_issues = None
+        self._not_submitted_issues = None
 
     def do_script(self):
         LogUtil.log_start("doScript")
@@ -123,7 +124,7 @@ class proxy:
                                                     self.tag)
         self._MonkeyApkTester.download_test_apk()
         self._MonkeyApkTester.install_downloaded_test_apk()
-        self._rst, self._jira_keys, self._kernel_issues = self._MonkeyApkTester.get_rst()
+        self._rst, self._jira_keys, self._kernel_issues, self._not_submitted_issues = self._MonkeyApkTester.get_rst()
         LogUtil.log_end("install_test_apk: " + str(self._rst))
 
     def check_package_valid(self):
@@ -144,7 +145,7 @@ class proxy:
                                                     self._run._param_dict,
                                                     self.tag)
         self._MonkeyApkTester.run_test()
-        self._rst, self._jira_keys, self._kernel_issues = self._MonkeyApkTester.get_rst()
+        self._rst, self._jira_keys, self._kernel_issues, self._not_submitted_issues = self._MonkeyApkTester.get_rst()
         LogUtil.log("Monkey Test Result: " + str(self._rst))
         LogUtil.log_end("Monkey Test")
 
@@ -168,5 +169,6 @@ class proxy:
                               self._rst,
                               self._rst_fail_msg,
                               self._jira_keys,
-                              self._kernel_issues).generate_result_report()
+                              self._kernel_issues,
+                              self._not_submitted_issues).generate_result_report()
         pass

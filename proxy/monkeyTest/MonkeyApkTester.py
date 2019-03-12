@@ -72,6 +72,7 @@ class MonkeyApkTester:
 
     _rst = None
     _kernel_issues = None
+    _not_submitted_issues = None
 
     def __init__(self, serial, out_path, param_dict, tag):
         self._device_serial = serial
@@ -402,9 +403,10 @@ class MonkeyApkTester:
         if isinstance(bug_results, list) and len(bug_results) > 0:
             self._rst = False
             for bug_res in bug_results:
-                bug = BugDao.save_bug_detail(bug_res, tag=self.tag)
-                if bug is False:
+                save_result, bug = BugDao.save_bug_detail(bug_res, tag=self.tag)
+                if save_result is False:
                     print("Save bug details error")
+                    self.save_to_not_submitted_issues(bug_res['dgt'], bug_res['time'], bug_res['type'], bug_res['summary'], bug_res['pkgName'])
                     continue
                 self.collect_bug_seed_info(bug.bug_signature_code)
                 self.collect_bug_time_info(bug.bug_signature_code, bug.bug_time)
@@ -419,7 +421,7 @@ class MonkeyApkTester:
             print "there is no bug about {} in {}".format(package, file_name)
 
     def get_rst(self):
-        return self._rst, self.jira_keys, self._kernel_issues
+        return self._rst, self.jira_keys, self._kernel_issues, self._not_submitted_issues
 
     def analyze_result(self):
         self._rst = len(self.bugs) == 0
@@ -444,7 +446,7 @@ class MonkeyApkTester:
             for bug in bugs:
                 if bug.bug_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
                     LogUtil.log("Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
-                    self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary)
+                    self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary, bug.bug_type, bug.bug_package_name)
                     continue
 
                 test_info = MonkeyReportGenerator.TestInformation(self._device_serial, self._param_dict)
@@ -501,7 +503,7 @@ class MonkeyApkTester:
                         LogUtil.log("Add comment error.......")
 
                 self.jira_keys.append(jira_key)
-                self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
+                # self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
         else:
             print "There is no bug found!!"
 
@@ -522,7 +524,7 @@ class MonkeyApkTester:
         if component is not None:
             jira_util.jira_content.set_component(component)
         if assignee is None:
-            jira_util.jira_content.set_assignee(ISSUE_DEFAULT_OWNER)
+            jira_util.jira_content.set_assignee(self._param_dict['TESTER'].rstrip())
         else:
             jira_util.jira_content.set_assignee(assignee)
         jira_util.jira_content.set_summary(summary)
@@ -758,7 +760,7 @@ class MonkeyApkTester:
             return REPRODUCTIVITY_SOMETIMES
         pass
 
-    def save_to_kernel_issues(self, bug_signature_code, bug_summary):
+    def save_to_kernel_issues(self, bug_signature_code, bug_summary, bug_type, bug_pkg_name):
         if not isinstance(self._kernel_issues, dict):
             self._kernel_issues = dict()
 
@@ -767,23 +769,43 @@ class MonkeyApkTester:
                 continue
             if bug_signature_code in self.results_monkey_time[monkey_round][self.result_monkey_issue_fst_time].keys():
                 # Init self._kernel_issues[monkey_round]
-                self._kernel_issues[monkey_round] = dict() if monkey_round not in self._kernel_issues.keys() \
-                    else self._kernel_issues[monkey_round]
+                if monkey_round not in self._kernel_issues.keys():
+                    self._kernel_issues[monkey_round] = dict()
                 # Save monkey start time
-                self._kernel_issues[monkey_round][self.result_monkey_start_time_field] = self.results_monkey_time[monkey_round][self.result_monkey_start_time_field]
+                if self.result_monkey_start_time_field not in self._kernel_issues[monkey_round].keys():
+                    self._kernel_issues[monkey_round][self.result_monkey_start_time_field] = str(self.results_monkey_time[monkey_round][self.result_monkey_start_time_field])
+                # Init issue field
+                if self.result_monkey_issue_fst_time not in self._kernel_issues[monkey_round].keys():
+                    self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time] = dict()
+                    self._kernel_issues[monkey_round][self.result_monkey_issue_times] = dict()
+                    self._kernel_issues[monkey_round][self.result_monkey_issue_summary] = dict()
                 # Save issue fst time
-                self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time] = dict() if self.result_monkey_issue_fst_time not in self._kernel_issues[monkey_round].keys() \
-                    else self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time]
                 self._kernel_issues[monkey_round][self.result_monkey_issue_fst_time][bug_signature_code] = self.results_monkey_time[monkey_round][self.result_monkey_issue_fst_time][bug_signature_code]
                 # Save issue times
-                self._kernel_issues[monkey_round][self.result_monkey_issue_times] = dict() if self.result_monkey_issue_times not in self._kernel_issues[monkey_round].keys() \
-                    else self._kernel_issues[monkey_round][self.result_monkey_issue_times]
                 self._kernel_issues[monkey_round][self.result_monkey_issue_times][bug_signature_code] = self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code]
                 # Save issue summary
-                self._kernel_issues[monkey_round][self.result_monkey_issue_summary] = dict() if self.result_monkey_issue_summary not in self._kernel_issues[monkey_round].keys() \
-                    else self._kernel_issues[monkey_round][self.result_monkey_issue_summary]
+                self._kernel_issues[monkey_round][self.result_monkey_issue_summary][bug_signature_code] = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
+        pass
 
-                self._kernel_issues[monkey_round][self.result_monkey_issue_summary][bug_signature_code] = bug_summary
+    def save_to_not_submitted_issues(self, bug_signature_code, bug_time, bug_type, bug_summary, bug_pkg_name):
+        if not isinstance(self._not_submitted_issues, dict):
+            self._not_submitted_issues = dict()
+        if self.current_index not in self._not_submitted_issues.keys():
+            self._not_submitted_issues[self.current_index] = dict()
+        if self.result_monkey_start_time_field not in self._not_submitted_issues[self.current_index].keys():
+            self._not_submitted_issues[self.current_index][self.result_monkey_start_time_field] = str(self.results_monkey_time[self.current_index][self.result_monkey_start_time_field])
+        if self.result_monkey_issue_fst_time not in self._not_submitted_issues[self.current_index].keys():
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_fst_time] = dict()
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times] = dict()
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_summary] = dict()
+
+        if bug_signature_code not in self._not_submitted_issues[self.current_index][self.result_monkey_issue_fst_time].keys():
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_fst_time][bug_signature_code] = bug_time
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] = 1
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_summary][bug_signature_code] = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
+        else:
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] += 1
+
         pass
 
 # if __name__ == "__main__":
