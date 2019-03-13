@@ -156,7 +156,7 @@ class BugDao:
     def get_jira_record_by_jira_key(jira_key):
         try:
             return BugDao.get(Jiras, Jiras.jira_id == jira_key).get()
-        except DoesNotExist:
+        except (DoesNotExist, AttributeError):
             return None
 
     @staticmethod

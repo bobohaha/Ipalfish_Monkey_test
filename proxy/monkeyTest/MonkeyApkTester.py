@@ -474,7 +474,7 @@ class MonkeyApkTester:
                             LogUtil.log("Create new jira error.........")
                             BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
 
-                        self.add_watchers(jira_key, self._param_dict['WATCHERS'])
+                        self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
                 except Exception, why:
                     print "Other error in create, save jira or add watchers: ", why
 
@@ -503,7 +503,7 @@ class MonkeyApkTester:
                         LogUtil.log("Add comment error.......")
 
                 self.jira_keys.append(jira_key)
-                # self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
+                self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
         else:
             print "There is no bug found!!"
 
