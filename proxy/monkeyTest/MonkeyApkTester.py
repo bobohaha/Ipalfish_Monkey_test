@@ -54,6 +54,7 @@ class MonkeyApkTester:
     BUG_TYPE_CRASH = "app_crash"
     BUG_TYPE_ANR = "anr_"
 
+    _log_file_name_origin = "monkey_log_{}.txt"
     _log_file_name = ""
     _monkey_command = ""
 
@@ -182,7 +183,6 @@ class MonkeyApkTester:
         self.clear_device_log()
         ADBUtil.silence_and_disable_notification_in_device(self._device_serial)
 
-        self.init_monkey_command()
         self.results_monkey_time[self.current_index] = dict()
         self.results_monkey_time[self.current_index][self.result_monkey_start_time_field] = ADBUtil.get_date_time(self._device_serial)
         self.run_monkey_in_background()
@@ -213,7 +213,7 @@ class MonkeyApkTester:
         for package_name in package_name_ary:
             package_name_str = package_name_str + "-p " + package_name + " "
 
-        self._log_file_name = "_" + str(time())
+        self._log_file_name = self._log_file_name_origin.format(str(self.current_index))
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
 
         command = "adb -s " + self._device_serial + " shell monkey " \
@@ -231,6 +231,7 @@ class MonkeyApkTester:
     def run_monkey_in_background(self):
         LogUtil.log_start("run_monkey_in_background")
 
+        self.init_monkey_command()
         UsbUtil.make_sure_usb_connected(self._device_serial)
         os.system(self._monkey_command)
 
@@ -243,12 +244,13 @@ class MonkeyApkTester:
         monkey_round_maximum_time_min = self._param_dict["MONKEY_ROUND_MAXIMUM_TIME"]
         monkey_max_time = int(monkey_round_maximum_time_min) * 60
 
-        LogUtil.log(
-            "hold_for_monkey_run_time(): monkey_round_maximum_time_min is "
-            + monkey_round_maximum_time_min)
+        LogUtil.log("hold_for_monkey_run_time(): monkey_round_maximum_time_min is " + monkey_round_maximum_time_min)
 
-        while time() - start_time < monkey_max_time:
-            LogUtil.log("hold_for_monkey_run_time(): " + str(time()))
+        while True:
+            left_seconds = start_time + monkey_max_time - time()
+            if left_seconds <= 0:
+                break
+            LogUtil.log("hold_for_monkey_run_time(): left {} minutes...".format(str(left_seconds / 60)))
             sleep(self.MONKEY_CHECK_INTERVAL_SECOND)
             if ADBUtil.get_process_id_by_name(self._device_serial, "monkey") is None:
                 self.run_monkey_in_background()
@@ -261,9 +263,7 @@ class MonkeyApkTester:
 
     def pull_log(self, round_index):
 
-        ADBUtil.mkdir_p(self._device_serial,
-                        self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(
-                            round_index) + "/")
+        ADBUtil.mkdir_p(self._device_serial, self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/")
         ADBUtil.move(self._device_serial, "/sdcard/app_crash* ",
                      self.DEVICE_OUTPUT_CRASH_PATH + "round_" + str(round_index) + "/")
         ADBUtil.move(self._device_serial, "/data/app_crash/traces* ",
@@ -358,7 +358,6 @@ class MonkeyApkTester:
 
     def analyze_bugs(self, bug_files, bug_type, trace_files=None):
         LogUtil.log_start("analyze_bugs")
-        print bug_files
         result = ""
         for filename in bug_files:
             if filename:
@@ -450,7 +449,7 @@ class MonkeyApkTester:
                     continue
 
                 test_info = MonkeyReportGenerator.TestInformation(self._device_serial, self._param_dict)
-                issue_detail = self.get_issue_detail(bug, test_info)
+                issue_detail, issue_loops = self.get_issue_detail(bug, test_info)
 
                 add_result = False
                 jira_key = "error_jira_key" + str(time())
@@ -503,7 +502,7 @@ class MonkeyApkTester:
                         LogUtil.log("Add comment error.......")
 
                 self.jira_keys.append(jira_key)
-                self.add_attachments(jira_key, bug.bug_signature_code, self.tag)
+                self.add_attachments(jira_key, bug.bug_signature_code, self.tag, issue_loops)
         else:
             print "There is no bug found!!"
 
@@ -574,14 +573,13 @@ class MonkeyApkTester:
         LogUtil.log_end("add_comment")
         pass
 
-    def add_attachments(self, jira_key, bug_signature_code, tag):
+    def add_attachments(self, jira_key, bug_signature_code, tag, issue_loops):
         LogUtil.log_start("add_attachments")
         if "error_jira_key" in jira_key:
             LogUtil.log("error jira key")
             return
-        bug_files = BugDao.get_by_signature_tag(BugFile,
-                                                bug_signature_code=bug_signature_code,
-                                                tag=tag)
+        # upload bug file
+        bug_files = BugDao.get_by_signature_tag(BugFile, bug_signature_code=bug_signature_code, tag=tag)
         jira_util = MonkeyJiraUtil()
         if bug_files is not None:
             bug_files_all = list()
@@ -598,12 +596,22 @@ class MonkeyApkTester:
         else:
             print "There is no bug report need uploading"
 
+        # upload mapping file
         mapping_file_name = self.CURRENT_PATH + "/mapping.txt"
         if os.path.exists(mapping_file_name):
             jira_util.add_attachment(jira_id_or_key=jira_key, file_names=mapping_file_name)
-
         else:
             print "There is no mapping file need uploading"
+
+        # upload monkey log file
+        for loop in issue_loops:
+            file_name = self._log_out_path + "/" + self._log_file_name_origin.format(str(loop))
+            print "uploading {} monkey log file: {}".format(str(loop), file_name)
+            file_name = self.get_valid_file_name(file_name)
+            if file_name is False:
+                continue
+            jira_util.add_attachment(jira_id_or_key=jira_key,
+                                     file_names=file_name)
 
         LogUtil.log_end("add_attachments")
         pass
@@ -713,11 +721,14 @@ class MonkeyApkTester:
 
     def get_issue_detail(self, bug, test_info):
         monkey_time_detail = ""
+        issue_loops = []
         for round_index in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
             if self.result_monkey_issue_fst_time not in self.results_monkey_time[round_index].keys():
                 continue
             elif bug.bug_signature_code not in self.results_monkey_time[round_index][self.result_monkey_issue_fst_time].keys():
                 continue
+
+            issue_loops.append(round_index)
             time_detail = JiraIssueTimeDetail().substitute(test_round=round_index,
                                                            monkey_start_time=self.results_monkey_time[round_index][self.result_monkey_start_time_field],
                                                            issue_first_time=self.results_monkey_time[round_index][self.result_monkey_issue_fst_time][bug.bug_signature_code],
@@ -740,7 +751,7 @@ class MonkeyApkTester:
                                                                  monkey_total_time=test_info.monkey_time,
                                                                  monkey_time_detail=monkey_time_detail,
                                                                  bug_details=bug.bug_detail)
-        return description
+        return description, issue_loops
         pass
 
     def get_reproductivity(self, bug_signature_code):
