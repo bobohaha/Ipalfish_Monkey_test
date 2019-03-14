@@ -518,12 +518,15 @@ class MonkeyApkTester:
         jira_util = MonkeyJiraUtil()
         jira_util.jira_content.set_affects_versions(self._rom_version)
         jira_util.jira_content.set_device_name(self._device_name)
-        component, assignee = get_component_assignee(self._param_dict['PACKAGE_NAME'])
+        component, assignee = get_component_assignee(bug.bug_package_name)
         print "assignee", assignee
         if component is not None:
             jira_util.jira_content.set_component(component)
         if assignee is None:
-            jira_util.jira_content.set_assignee(self._param_dict['TESTER'].rstrip())
+            _assignee = self._param_dict['TESTER'].rstrip()
+            if _assignee == "":
+                _assignee = ISSUE_DEFAULT_OWNER
+            jira_util.jira_content.set_assignee(_assignee)
         else:
             jira_util.jira_content.set_assignee(assignee)
         jira_util.jira_content.set_summary(summary)

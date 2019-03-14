@@ -53,6 +53,7 @@ COMPONENT_GLOBAL_PERSONAL_ASSISTANT = "Global-智能助理Personal Assistant"
 COMPONENT_GLOBAL_BROWSER = "Global-浏览器Browser"
 COMPONENT_GLOBAL_GAME_CENTER = "Global-游戏中心Games"
 COMPONENT_GLOBAL_MUSIC = "Global-音乐Music"
+COMPONENT_GLOBAL_THEME = "Global-国际主题 Theme"
 COMPONENT_GLOBAL_TREND_NEWS = "TrendNews"
 COMPONENT_GLOBAL_MI_DROP = "Global-快传Mi Drop"
 
@@ -170,7 +171,7 @@ MODEL_TAG = {
     "violet_global": "F7B_global//Please move platform issues to HTH",
     # "": "F10_global",
     # "": "F11_global",
-    # "": "F9_global",
+    "lotus_global": "F9_global",
     "clover_global": "D9P//请移至华勤项目"
 }
 
@@ -186,25 +187,27 @@ def get_miui_model(device_name):
     return MODEL_TAG[device_name]
 
 
-def get_component_assignee(package_names):
-    packages = package_names.split(",")
-    if GlobalFileExplorer in packages:
+def get_component_assignee(package_name):
+    package_name = package_name.rstrip()
+    if package_name == GlobalFileExplorer:
         return COMPONENT_GLOBAL_FILE_EXPLORE, "zhouhongyu"
-    if MUSIC in packages:
+    if package_name == MUSIC:
         return COMPONENT_GLOBAL_MUSIC, "chenpeng7"
-    if GlobalMIUIHome in packages:
+    if package_name == GlobalThemeManager:
+        return COMPONENT_GLOBAL_THEME, "chenpeng7"
+    if package_name == (GlobalMIUIHome, MintLauncher):
         return COMPONENT_POCO_LAUNCHER, "lishanshan3"
-    if FunnyPuriVideo in packages:
+    if package_name == FunnyPuriVideo:
         return COMPONENT_GLOBAL_TREND_NEWS, "hanmengmeng"
-    if MintBrowser in packages:
+    if package_name == MintBrowser:
         return COMPONENT_GLOBAL_BROWSER, "chenchao12"
-    if Browser in packages:
+    if package_name == Browser:
         return COMPONENT_GLOBAL_BROWSER, "huangxueqing"
-    if MiDrop in packages:
+    if package_name == MiDrop:
         return COMPONENT_GLOBAL_MI_DROP, "cuixiang"
-    if PersonalAssistant in packages:
+    if package_name == (PersonalAssistant, MIUIHome):
         return COMPONENT_GLOBAL_PERSONAL_ASSISTANT, "liwenquan"
-    if Download in packages:
+    if package_name == (DownloadUi, Download):
         return COMPONENT_GLOBAL_DOWNLOAD_MANAGER, "dingtianmeng"
 
     return None, None
