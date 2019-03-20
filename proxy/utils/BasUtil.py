@@ -59,8 +59,9 @@ class BasUtil:
         if response.status_code is requests.codes.ok:
             try:
                 return response.json()['data']['bugs']
-            except (ValueError, KeyError):
-                print "analysis error", response.status_code, response.content
+            except Exception, why:
+                print "analysis error: ", response.status_code, response.content
+                print why
                 return {}
         else:
             print "analysis error", response.status_code, response.content
