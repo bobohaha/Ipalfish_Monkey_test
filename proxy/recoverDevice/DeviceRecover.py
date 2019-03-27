@@ -10,6 +10,7 @@ import os
 class DeviceRecover:
     PROJECT_NAME = "RecoverDevice"
     RECOVER_BROADCAST_ACTION = "com.omni.recover.build_in.app"
+    RECOVER_BROADCAST_ACTION_FLAG = "0x01000000"
 
     rst = None
     rstFileName = "recoverDevice.txt"
@@ -23,19 +24,15 @@ class DeviceRecover:
 
     def wait_for_device_ready(self):
         ADBUtil.wait_for_device(self._device_serial)
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.wait_for_reboot_complete(self._device_serial)
         ADBUtil.wait_for_enter_system(self._device_serial)
 
     def reboot_device(self):
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.reboot(self._device_serial)
-        self.wait_for_device_ready()
         pass
 
     def download_install_apk_and_make_sure_usb(self):
         self.download_or_upgrade_apk()
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         self.install_downloaded_apk()
         self.wait_for_device_ready()
         pass
@@ -89,7 +86,7 @@ class DeviceRecover:
         LogUtil.log_start("do_recover_device")
         if not self.is_sysopt_version_newest():
             self.download_install_apk_and_make_sure_usb()
-        ADBUtil.broadcast_action(self._device_serial, self.RECOVER_BROADCAST_ACTION)
+        ADBUtil.broadcast_action(self._device_serial, self.RECOVER_BROADCAST_ACTION, self.RECOVER_BROADCAST_ACTION_FLAG)
         self.wait_for_device_ready()
         self.rst = ADBUtil.wait_and_check_is_in_oobe(self._device_serial)
         LogUtil.log_end("do_recover_device")

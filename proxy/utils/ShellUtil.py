@@ -27,3 +27,32 @@ class ShellUtil:
         command = "rename 's/" + origin_str + "/" + target_str + "/g' " + file_name_regex
         ShellUtil.execute_shell(command)
         path.back()
+
+    @staticmethod
+    def get_apk_version_code(file_path):
+        command = "aapt d badging " + file_path
+        std_out, std_err = ShellUtil.execute_shell(command, True)
+        try:
+            for line in std_out.split("\n"):
+                if "versionCode" in line:
+                    version_code = line.split("versionCode=")[1].split("'")[1]
+                    return int(version_code)
+        except Exception, why:
+            print "get_apk_version_code error: ", why
+        print "get_apk_version_code failed"
+        return 0
+
+    @staticmethod
+    def get_apk_package_name(file_path):
+        command = "aapt d badging " + file_path
+        std_out, std_err = ShellUtil.execute_shell(command, True)
+        try:
+            for line in std_out.split("\n"):
+                if "package: name=" in line:
+                    package_name = line.split("package: name=")[1].split("'")[1]
+                    return package_name
+        except Exception, why:
+            print "get_apk_package_name error: ", why
+
+        print "get_apk_package_name failed"
+        return ""

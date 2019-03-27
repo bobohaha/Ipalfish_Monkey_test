@@ -1,5 +1,6 @@
 import os.path
 from proxy.utils.FdsUtil import FdsUtil
+from proxy.utils.ShellUtil import ShellUtil
 
 
 class ObjectSyncUtil(FdsUtil):
@@ -50,17 +51,6 @@ class ObjectSyncUtil(FdsUtil):
     def get_local_object_version(self):
         return self.get_local_apk_version(self._object_local_file_name)
 
-    def get_local_apk_version(self, file_name, file_path='./'):
-        file = file_path + file_name
-        if not os.path.exists(file):
-            return 0
-
-        command = "aapt d badging " + file + " | grep 'pack' | cut -f3 -d' ' | cut -f2 -d'='"
-
-        out_put = os.popen(command)
-        try:
-            out_put_version = out_put.read().split("'")[1].strip()
-            return int(out_put_version)
-        except:
-            print(out_put.read())
-            return 0
+    @classmethod
+    def get_local_apk_version(cls, file_name, file_path='./'):
+        return ShellUtil.get_apk_version_code(os.path.join(file_path, file_name))

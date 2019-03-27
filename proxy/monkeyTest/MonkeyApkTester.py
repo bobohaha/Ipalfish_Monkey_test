@@ -3,6 +3,9 @@ import re
 from time import sleep, time
 import datetime
 import sys
+
+from proxy.utils.ShellUtil import ShellUtil
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -53,6 +56,9 @@ class MonkeyApkTester:
 
     BUG_TYPE_CRASH = "app_crash"
     BUG_TYPE_ANR = "anr_"
+
+    test_apk_file_name = ""
+    test_apk_package = ""
 
     _log_file_name_origin = "monkey_log_{}.txt"
     _log_file_name = ""
@@ -108,30 +114,27 @@ class MonkeyApkTester:
         _PathUtil.chdir_here()
         self._MonkeyApkSyncUtil. \
             download_objects_with_version(self._param_dict[param.TEST_APK_BUILD_VERSION])
+        self.test_apk_file_name = self.get_file_name(".apk")
+        self.test_apk_package = ShellUtil.get_apk_package_name(self.test_apk_file_name)
         LogUtil.log_end("download_test_apk")
+
+    def uninstall_apk_in_device(self):
+        if not self._is_auto_test:
+            return
+        LogUtil.log_start("uninstall_apk_in_device")
+        self._rst = ADBUtil.try_uninstall(self._device_serial, self.test_apk_package)
+        LogUtil.log_end("uninstall_apk_in_device")
+        pass
 
     def install_downloaded_test_apk(self):
         if not self._is_auto_test:
             return
         LogUtil.log_start("install_downloaded_test_apk")
-        test_apk_file_name = self.get_file_name(".apk")
-        self.install_apk(test_apk_file_name)
+        self._rst = ADBUtil.try_install(self._device_serial, self.test_apk_file_name)
         LogUtil.log_end("install_downloaded_test_apk")
 
-    def install_apk(self, apk_file_path):
-        LogUtil.log_start("install_apk")
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-        self._rst = ADBUtil.try_install(
-            self._device_serial, apk_file_path)
-        LogUtil.log_end("install_apk")
-
     def reboot_device(self):
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
         ADBUtil.reboot(self._device_serial)
-        ADBUtil.wait_for_device(self._device_serial)
-        UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-        ADBUtil.wait_for_reboot_complete(self._device_serial)
-        ADBUtil.wait_for_enter_system(self._device_serial)
         pass
 
     def clear_log_folder(self):
@@ -216,7 +219,7 @@ class MonkeyApkTester:
         self._log_file_name = self._log_file_name_origin.format(str(self.current_index))
         log_file_full_path = self._log_out_path + "/" + self._log_file_name
 
-        command = "adb -s " + self._device_serial + " shell monkey " \
+        command = "monkey " \
                   + monkey_param + " " + package_name_str
 
         self.get_seed()
@@ -232,8 +235,7 @@ class MonkeyApkTester:
         LogUtil.log_start("run_monkey_in_background")
 
         self.init_monkey_command()
-        UsbUtil.make_sure_usb_connected(self._device_serial)
-        os.system(self._monkey_command)
+        ADBUtil.execute_shell(self._device_serial, self._monkey_command)
 
         LogUtil.log_end("run_monkey_in_background")
 
