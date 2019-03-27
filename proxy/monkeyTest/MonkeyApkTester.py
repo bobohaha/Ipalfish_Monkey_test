@@ -31,12 +31,12 @@ except ImportError:
 
 from proxy import param
 from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
-from proxy.usb.UsbUtil import UsbUtil
 from proxy.utils.ADBUtil import ADBUtil
 from proxy.utils.KillProcessUtil import KillProcessUtil
 from proxy.utils.LogUtil import LogUtil
 from proxy.utils.PathUtil import PathUtil
 from proxy.utils.PropUtil import PropUtil
+from proxy.utils.sign_apk.SignAPKUtil import SignAPKUtil
 
 
 SLEEP_TIME_2MIN = 60 * 2
@@ -125,6 +125,14 @@ class MonkeyApkTester:
         self._rst = ADBUtil.try_uninstall(self._device_serial, self.test_apk_package)
         LogUtil.log_end("uninstall_apk_in_device")
         pass
+
+    def check_and_sign_apk(self):
+        if not self._is_auto_test:
+            return
+        LogUtil.log_start("retry_sign_apk")
+        if ADBUtil.check_package_exist(self._device_serial, self.test_apk_package) and not self.is_apk_in_device_belong_normal_key():
+            self.test_apk_file_name = SignAPKUtil.get_test_key_apk_if_belong_normal_key(self.test_apk_file_name)
+        LogUtil.log_end("retry_sign_apk")
 
     def install_downloaded_test_apk(self):
         if not self._is_auto_test:
@@ -822,6 +830,15 @@ class MonkeyApkTester:
         else:
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] += 1
 
+        pass
+
+    def is_apk_in_device_belong_normal_key(self):
+        apk_in_device_file_path = ADBUtil.get_apk_file_path(self._device_serial, self.test_apk_package)
+        ADBUtil.root_and_remount(self._device_serial)
+        output_apk = os.path.basename(apk_in_device_file_path)
+        ADBUtil.pull(self._device_serial, apk_in_device_file_path, ".")
+        output_apk_md5 = SignAPKUtil.get_md5_if_belong_normal_key(output_apk)
+        return output_apk_md5 != ""
         pass
 
 # if __name__ == "__main__":

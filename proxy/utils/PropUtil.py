@@ -9,6 +9,7 @@ class PropUtil:
     PROP_DEVICE_PRODUCT = ["ro.build.product"]
     PROP_ROM_VERSION = ["ro.build.version.incremental"]
     PROP_ANDROID_VERSION = ["ro.build.version.release"]
+    PROP_ROM_SIGNATURE = ["ro.build.tags"]
 
     @staticmethod
     def get_device_name(serial):
@@ -33,6 +34,14 @@ class PropUtil:
             if result:
                 return result
         raise PropUtil.PropertyNotFound("Get android version error")
+
+    @staticmethod
+    def get_device_rom_signature(serial):
+        for prop in PropUtil.PROP_ROM_SIGNATURE:
+            result = ADBUtil.get_prop(serial, prop)
+            if result:
+                return result
+        raise PropUtil.PropertyNotFound("Get rom signature error")
 
     class PropertyNotFound(Exception):
         pass

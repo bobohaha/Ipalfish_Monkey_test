@@ -123,7 +123,7 @@ class proxy:
                                                     self._run._param_dict,
                                                     self.tag)
         self._MonkeyApkTester.download_test_apk()
-        self._MonkeyApkTester.uninstall_apk_in_device()
+        self._MonkeyApkTester.check_and_sign_apk()
         self._MonkeyApkTester.install_downloaded_test_apk()
         self._rst, self._jira_keys, self._kernel_issues, self._not_submitted_issues = self._MonkeyApkTester.get_rst()
         LogUtil.log_end("install_test_apk: " + str(self._rst))
