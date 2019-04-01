@@ -9,7 +9,7 @@ class ShellUtil:
         pass
 
     @staticmethod
-    def execute_shell(command, output=False):
+    def execute_shell(command, output=False, quiet=False):
         print command
         if not output:
             os.system(command)
@@ -17,7 +17,8 @@ class ShellUtil:
         else:
             std_result, std_error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                                      stderr=subprocess.PIPE).communicate()
-            print "std_result: " + str(std_result), "std_error: " + str(std_error)
+            if not quiet:
+                print "std_result: " + str(std_result), "std_error: " + str(std_error)
             return std_result, std_error
 
     @staticmethod

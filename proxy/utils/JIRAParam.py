@@ -165,7 +165,7 @@ MODEL_TAG = {
     # "": "C3F_global/Please move platform issues to HONGMI",
     "grus_global": "F2_global",
     "andromeda_global": "E5G_global",
-    # "tiare": "C3G_global_AndroidGo//Please move platform issues to HONGMI",
+    "tiare_global": "C3G_global_AndroidGo//Please move platform issues to HONGMI",
     # "": "C3E_global//Please move platform issues to HONGMI",
     "onclite_global": "F6lite_global//Please move platform issues to HTH",
     "violet_global": "F7B_global//Please move platform issues to HTH",
@@ -181,10 +181,10 @@ LABEL_GLOBAL_DEFAULT = "global"
 LABEL_GLOBAL_DEV_CI = "global_dev_ci"
 
 
-def get_miui_model(device_name):
-    if "global" not in device_name:
-        device_name += "_global"
-    return MODEL_TAG[device_name]
+def get_miui_model(mod_device_name):
+    if "global" not in mod_device_name and "_sprout" not in mod_device_name:
+        mod_device_name += "_global"
+    return MODEL_TAG[mod_device_name]
 
 
 def get_component_assignee(package_name):
@@ -196,7 +196,7 @@ def get_component_assignee(package_name):
     if package_name == GlobalThemeManager:
         return COMPONENT_GLOBAL_THEME, "chenpeng7"
     if package_name == (GlobalMIUIHome, MintLauncher):
-        return COMPONENT_POCO_LAUNCHER, "lishanshan3"
+        return COMPONENT_POCO_LAUNCHER, "lvjian1"
     if package_name == FunnyPuriVideo:
         return COMPONENT_GLOBAL_TREND_NEWS, "hanmengmeng"
     if package_name == MintBrowser:

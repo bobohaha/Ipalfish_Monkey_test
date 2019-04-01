@@ -1,3 +1,4 @@
+from proxy.param import PACKAGE_NAME, TEST_APK_BUILD_VERSION, MONKEY_PARAM, MONKEY_ROUND, MONKEY_ROUND_MAXIMUM_TIME
 from proxy.utils.PropUtil import PropUtil
 from proxy.utils.ADBUtil import ADBUtil
 from proxy.monkeyTest.BugDao import BugDao
@@ -199,17 +200,17 @@ class MonkeyReportGenerator(object):
 
     class TestInformation:
         def __init__(self, serial, param_dict):
-            self.package_name = param_dict['PACKAGE_NAME']
+            self.package_name = param_dict[PACKAGE_NAME]
             self.app_versions = str(MonkeyReportGenerator.AppVersions(serial, self.package_name.split(',')))
-            self.jenkins_build_num = param_dict['TEST_APK_BUILD_VERSION']
-            self.device_name = PropUtil.get_device_name(serial)
+            self.jenkins_build_num = param_dict[TEST_APK_BUILD_VERSION]
+            self.device_name = PropUtil.get_mod_device_name(serial)
             self.rom_version = PropUtil.get_rom_version(serial)
             self.android_version = PropUtil.get_android_version(serial)
-            self.monkey_param = param_dict['MONKEY_PARAM']
+            self.monkey_param = param_dict[MONKEY_PARAM]
             self.monkey_time = "{loop} loop {minutes} {min_str}". \
-                format(loop=param_dict['MONKEY_ROUND'],
-                       minutes=param_dict['MONKEY_ROUND_MAXIMUM_TIME'],
-                       min_str="minute" if int(param_dict['MONKEY_ROUND_MAXIMUM_TIME']) == 1 else "minutes")
+                format(loop=param_dict[MONKEY_ROUND],
+                       minutes=param_dict[MONKEY_ROUND_MAXIMUM_TIME],
+                       min_str="minute" if int(param_dict[MONKEY_ROUND_MAXIMUM_TIME]) == 1 else "minutes")
 
     class AppVersions:
         def __init__(self, serial, package_names):
@@ -240,7 +241,7 @@ class MonkeyReportGenerator(object):
 
     class NotSubmittedIssues:
         def __init__(self, param, monkey_kernel_issue):
-            self.monkey_round = int(param['MONKEY_ROUND'])
+            self.monkey_round = int(param[MONKEY_ROUND])
             self.issues = list()
             for index in range(1, self.monkey_round + 1):
                 if monkey_kernel_issue is None:

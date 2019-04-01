@@ -1,9 +1,10 @@
 # coding=utf-8
-import re
-from time import sleep, time
 import datetime
+import re
 import sys
+from time import sleep, time
 
+from proxy.param import MONKEY_SEED, PACKAGE_NAME, MONKEY_ROUND, MONKEY_PARAM, MONKEY_ROUND_MAXIMUM_TIME, ISSUE_WATCHERS, TESTER
 from proxy.utils.ShellUtil import ShellUtil
 
 reload(sys)
@@ -87,13 +88,13 @@ class MonkeyApkTester:
         self._param_dict = param_dict
         self._is_auto_test = True if self._param_dict[param.TEST_APK_BUILD_VERSION] != "None" else False
         self._seed = None
-        self._seed_specify = param_dict["MONKEY_SEED"] if 'MONKEY_SEED' in param_dict.keys() \
-                                                          and param_dict['MONKEY_SEED'] is not None \
-                                                          and param_dict['MONKEY_SEED'] != "None" \
-                                                          and param_dict['MONKEY_SEED'] != "" \
-                                                          and param_dict['MONKEY_SEED'] != " " else None
+        self._seed_specify = param_dict[MONKEY_SEED] if MONKEY_SEED in param_dict.keys() \
+                                                          and param_dict[MONKEY_SEED] is not None \
+                                                          and param_dict[MONKEY_SEED] != "None" \
+                                                          and param_dict[MONKEY_SEED] != "" \
+                                                          and param_dict[MONKEY_SEED] != " " else None
         self.clear_log_folder()
-        self._device_name = PropUtil.get_device_name(serial)
+        self._device_name = PropUtil.get_mod_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
         self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._param_dict[param.PACKAGE_NAME])
         self.tag = tag
@@ -163,7 +164,7 @@ class MonkeyApkTester:
         os.system(command)
 
     def check_package_valid(self):
-        package_list = self._param_dict['PACKAGE_NAME'].split(",")
+        package_list = self._param_dict[PACKAGE_NAME].split(",")
         for package in package_list:
             if package.rstrip() == "":
                 continue
@@ -176,7 +177,7 @@ class MonkeyApkTester:
     def run_test(self):
         LogUtil.log_start("run_test")
         self._rst = True
-        round_str = self._param_dict["MONKEY_ROUND"]
+        round_str = self._param_dict[MONKEY_ROUND]
 
         round_count = int(round_str)
 
@@ -215,8 +216,8 @@ class MonkeyApkTester:
 
     def init_monkey_command(self):
         LogUtil.log_start("init_monkey_command")
-        input_package_name = self._param_dict["PACKAGE_NAME"]
-        monkey_param = self._param_dict["MONKEY_PARAM"]
+        input_package_name = self._param_dict[PACKAGE_NAME]
+        monkey_param = self._param_dict[MONKEY_PARAM]
 
         package_name_ary = input_package_name.split(",")
         package_name_str = ""
@@ -251,7 +252,7 @@ class MonkeyApkTester:
         LogUtil.log_start("hold_for_monkey_run_time")
 
         start_time = time()
-        monkey_round_maximum_time_min = self._param_dict["MONKEY_ROUND_MAXIMUM_TIME"]
+        monkey_round_maximum_time_min = self._param_dict[MONKEY_ROUND_MAXIMUM_TIME]
         monkey_max_time = int(monkey_round_maximum_time_min) * 60
 
         LogUtil.log("hold_for_monkey_run_time(): monkey_round_maximum_time_min is " + monkey_round_maximum_time_min)
@@ -395,7 +396,7 @@ class MonkeyApkTester:
         return self.BUG_TYPE_ANR + re.findall(r"anr_(.+?)_", filename)[0]
 
     def analysis_bug_bas(self, file_name):
-        packages = self._param_dict['PACKAGE_NAME'].split(",")
+        packages = self._param_dict[PACKAGE_NAME].split(",")
         if not isinstance(packages, list):
             packages = [packages]
         for package in packages:
@@ -483,7 +484,7 @@ class MonkeyApkTester:
                             LogUtil.log("Create new jira error.........")
                             BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
 
-                        self.add_watchers(jira_key, self._param_dict['ISSUE_WATCHERS'])
+                        self.add_watchers(jira_key, self._param_dict[ISSUE_WATCHERS])
                 except Exception, why:
                     print "Other error in create, save jira or add watchers: ", why
 
@@ -533,7 +534,7 @@ class MonkeyApkTester:
         if component is not None:
             jira_util.jira_content.set_component(component)
         if assignee is None:
-            _assignee = self._param_dict['TESTER'].rstrip()
+            _assignee = self._param_dict[TESTER].rstrip()
             if _assignee == "":
                 _assignee = ISSUE_DEFAULT_OWNER
             jira_util.jira_content.set_assignee(_assignee)
@@ -735,7 +736,7 @@ class MonkeyApkTester:
     def get_issue_detail(self, bug, test_info):
         monkey_time_detail = ""
         issue_loops = []
-        for round_index in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
+        for round_index in range(1, int(self._param_dict[MONKEY_ROUND]) + 1):
             if self.result_monkey_issue_fst_time not in self.results_monkey_time[round_index].keys():
                 continue
             elif bug.bug_signature_code not in self.results_monkey_time[round_index][self.result_monkey_issue_fst_time].keys():
@@ -748,7 +749,7 @@ class MonkeyApkTester:
                                                            issue_times=str(self.results_monkey_time[round_index][self.result_monkey_issue_times][bug.bug_signature_code])
                                                            )
             monkey_time_detail += time_detail
-        test_introduce = AUTO_TEST_INTRODUCTION if self._is_auto_test else RD_TEST_INTRODUCTION.format(tester=self._param_dict['TESTER'].rstrip())
+        test_introduce = AUTO_TEST_INTRODUCTION if self._is_auto_test else RD_TEST_INTRODUCTION.format(tester=self._param_dict[TESTER].rstrip())
         description = JiraMonkeyDescriptionTemplate().substitute(test_introduce_title=test_introduce,
                                                                  package=bug.bug_package_name,
                                                                  bug_type=bug.bug_type,
@@ -769,7 +770,7 @@ class MonkeyApkTester:
 
     def get_reproductivity(self, bug_signature_code):
         bug_count = 0
-        for monkey_round in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
+        for monkey_round in range(1, int(self._param_dict[MONKEY_ROUND]) + 1):
             if self.result_monkey_issue_times not in self.results_monkey_time[monkey_round].keys():
                 continue
             elif bug_signature_code not in self.results_monkey_time[monkey_round][self.result_monkey_issue_times].keys():
@@ -788,7 +789,7 @@ class MonkeyApkTester:
         if not isinstance(self._kernel_issues, dict):
             self._kernel_issues = dict()
 
-        for monkey_round in range(1, int(self._param_dict["MONKEY_ROUND"]) + 1):
+        for monkey_round in range(1, int(self._param_dict[MONKEY_ROUND]) + 1):
             if self.result_monkey_issue_fst_time not in self.results_monkey_time[monkey_round].keys():
                 continue
             if bug_signature_code in self.results_monkey_time[monkey_round][self.result_monkey_issue_fst_time].keys():

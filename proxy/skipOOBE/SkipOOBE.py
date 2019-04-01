@@ -36,7 +36,7 @@ class SkipOOBE:
         self._log_out_path = out_path
         self._rom_info = param_dict
         self._extra_params = test_region_language
-        self._device_name = PropUtil.get_device_name(serial)
+        self._device_name = PropUtil.get_mod_device_name(serial)
         self.update_extra_params()
         pass
 

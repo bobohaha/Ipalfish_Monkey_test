@@ -22,16 +22,18 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
+        LogUtil.log("Code version: V4.1.16.1")
         DependenciesUtil.install_dependencies()
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None
 
-        self.tag = run._param_dict['PACKAGE_NAME'] + "_" + str(datetime.datetime.now())
+        self.tag = run._param_dict[param.PACKAGE_NAME] + "_" + str(datetime.datetime.now())
         self._rst_fail_msg = None
         self._test_information = None
         self._kernel_issues = None
         self._not_submitted_issues = None
+        LogUtil.log_end("__init__")
 
     def do_script(self):
         LogUtil.log_start("doScript")

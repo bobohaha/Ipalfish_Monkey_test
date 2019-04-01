@@ -151,7 +151,7 @@ class ADBUtil:
     @staticmethod
     def get_information_of_installed_package(serial, package_name, key_word=None):
         command = "dumpsys package " + package_name
-        std_result, std_error = ADBUtil.execute_shell(serial, command, True)
+        std_result, std_error = ADBUtil.execute_shell(serial, command, True, True)
         if key_word is None:
             return std_result
         try:
@@ -219,7 +219,7 @@ class ADBUtil:
     @staticmethod
     def is_in_page_of_package(serial, package_name):
         command = "dumpsys window"
-        std_out, std_err = ADBUtil.execute_shell(serial, command, True)
+        std_out, std_err = ADBUtil.execute_shell(serial, command, True, True)
         try:
             for line in std_out.split("\n"):
                 if "mFocusedApp" in line:
@@ -240,7 +240,7 @@ class ADBUtil:
     @staticmethod
     def wait_for_enter_system(serial):
         while True:
-            std_result, std_error = ADBUtil.execute_shell(serial, "dumpsys window", True)
+            std_result, std_error = ADBUtil.execute_shell(serial, "dumpsys window", True, True)
             for line in std_result.split("\n"):
                 if "mFocusedApp=" in line and "mFocusedApp=null" not in line:
                     return True
@@ -264,18 +264,18 @@ class ADBUtil:
         ADBUtil.execute_shell(serial, "uiautomator dump {}".format(out_put_file_path), True)
 
     @staticmethod
-    def execute_shell(serial, shell_command, output=False):
+    def execute_shell(serial, shell_command, output=False, quiet=False):
         command = "{} -s {} shell {}".format(adb, serial, shell_command)
         print (command)
         UsbUtil.make_sure_usb_connected(serial)
-        return ShellUtil.execute_shell(command, output)
+        return ShellUtil.execute_shell(command, output, quiet)
 
     @staticmethod
-    def execute_adb_command(serial, command, output=False):
+    def execute_adb_command(serial, command, output=False, quiet=False):
         command = "{} -s {} {}".format(adb, serial, command)
         print (command)
         UsbUtil.make_sure_usb_connected(serial)
-        return ShellUtil.execute_shell(command, output)
+        return ShellUtil.execute_shell(command, output, quiet)
 
     @staticmethod
     def silence_and_disable_notification_in_device(serial):
@@ -287,8 +287,8 @@ class ADBUtil:
 
     @staticmethod
     def get_process_id_by_name(serial, process_name):
-        std_out_1, std_err_1 = ADBUtil.execute_shell(serial, "ps", True)
-        std_out_2, std_err_2 = ADBUtil.execute_shell(serial, "ps -A", True)
+        std_out_1, std_err_1 = ADBUtil.execute_shell(serial, "ps", True, True)
+        std_out_2, std_err_2 = ADBUtil.execute_shell(serial, "ps -A", True, True)
         process_info_1 = str(std_out_1).split("\n")
         process_info_2 = str(std_out_2).split("\n")
         process_info_all = set(process_info_1 + process_info_2)
@@ -316,7 +316,7 @@ class ADBUtil:
 
     @staticmethod
     def get_apk_file_path(serial, package_name):
-        std_out, std_err = ADBUtil.execute_shell(serial, "pm list package -f", True)
+        std_out, std_err = ADBUtil.execute_shell(serial, "pm list package -f", True, True)
         try:
             for line in std_out.split("\n"):
                 if package_name in line:
