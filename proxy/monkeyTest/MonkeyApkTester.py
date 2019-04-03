@@ -757,8 +757,8 @@ class MonkeyApkTester:
                                                                  rom_versions=self._rom_version,
                                                                  app_version_name=test_info.app_versions,
                                                                  android_version=test_info.android_version,
-                                                                 auto_test_info="编译APK的Jenkins ID: " +
-                                                                                str(test_info.jenkins_build_num)
+                                                                 auto_test_info="| 编译APK的Jenkins ID | Jenkins Job ID of Building apk | " +
+                                                                                str(test_info.jenkins_build_num) + " |"
                                                                  if self._is_auto_test else "",
                                                                  monkey_seed=self.get_seed_str(bug.bug_signature_code),
                                                                  monkey_param=test_info.monkey_param,

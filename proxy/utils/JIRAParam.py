@@ -195,7 +195,7 @@ def get_component_assignee(package_name):
         return COMPONENT_GLOBAL_MUSIC, "chenpeng7"
     if package_name == GlobalThemeManager:
         return COMPONENT_GLOBAL_THEME, "chenpeng7"
-    if package_name == (GlobalMIUIHome, MintLauncher):
+    if package_name in (GlobalMIUIHome, MintLauncher) or package_name == (GlobalMIUIHome, MintLauncher):
         return COMPONENT_POCO_LAUNCHER, "lvjian1"
     if package_name == FunnyPuriVideo:
         return COMPONENT_GLOBAL_TREND_NEWS, "hanmengmeng"
@@ -205,9 +205,9 @@ def get_component_assignee(package_name):
         return COMPONENT_GLOBAL_BROWSER, "huangxueqing"
     if package_name == MiDrop:
         return COMPONENT_GLOBAL_MI_DROP, "cuixiang"
-    if package_name == (PersonalAssistant, MIUIHome):
+    if package_name in (PersonalAssistant, MIUIHome) or package_name == (PersonalAssistant, MIUIHome):
         return COMPONENT_GLOBAL_PERSONAL_ASSISTANT, "liwenquan"
-    if package_name == (DownloadUi, Download):
+    if package_name in (DownloadUi, Download) or package_name == (DownloadUi, Download):
         return COMPONENT_GLOBAL_DOWNLOAD_MANAGER, "dingtianmeng"
 
     return None, None
