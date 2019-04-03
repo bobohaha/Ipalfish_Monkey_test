@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 from proxy import param
 
 
@@ -8,9 +9,9 @@ class TestRegionLanguageBuilder:
     @staticmethod
     def get_test_region_language(device_name=None, package_name=None):
         test_region_language = {}
-        test_region = TestRegionLanguageBuilder.getTestRegion(device_name=device_name,
-                                                              package_name=package_name)
-        test_language = TestRegionLanguageBuilder.getTestLanguage(test_region=test_region)
+        test_region = TestRegionLanguageBuilder.get_test_region(device_name=device_name,
+                                                                package_name=package_name)
+        test_language = TestRegionLanguageBuilder.get_test_language(test_region=test_region)
         if test_region is not None:
             test_region_language.setdefault(param.TEST_REGION_KEY, test_region)
         if test_language is not None:
@@ -45,3 +46,29 @@ class TestRegionLanguageBuilder:
                 return param.TEST_REGION_LANGUAGE[test_region]
 
         return test_language
+
+    @staticmethod
+    def get_target_region_language(language, region):
+        target_region_language = {}
+        if language is not None and language != "None" and language != "":
+            if "（" in language:
+                language = language.replace("（", " \(")
+            elif "(" in language and "\(" not in language:
+                language = language.replace("(", " \(")
+            if "）" in language:
+                language = language.replace("）", "\)")
+            elif ")" in language and "\)" not in language:
+                language = language.replace(")", "\)")
+            language_pieces = language.split()
+            if len(language_pieces) > 1:
+                _language = ""
+                for piece in language_pieces:
+                    _language += piece + "\ "
+                language = _language[:-2]
+            language = "\"{}\"".format(language)
+            target_region_language.setdefault(param.TEST_TARGET_LANGUAGE_KEY, language)
+
+        if region is not None and region != "None" and region != "":
+            target_region_language.setdefault(param.TEST_TARGET_REGION_KEY, region)
+
+        return target_region_language

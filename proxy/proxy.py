@@ -5,6 +5,7 @@ import sys
 import param
 from monkeyTest.MonkeyApkTester import MonkeyApkTester
 from preSetting.PreSetter import PreSetter
+from utils.TestRegionLanguageBuilder import TestRegionLanguageBuilder
 from recoverDevice.DeviceRecover import DeviceRecover
 from skipOOBE.SkipOOBE import SkipOOBE
 from utils.DependenciesUtil import DependenciesUtil
@@ -22,11 +23,15 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.1.16.3")
+        LogUtil.log("Code version: V4.1.17.0")
         DependenciesUtil.install_dependencies()
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None
+
+        self._preset_target_region_language = TestRegionLanguageBuilder.get_target_region_language(run._param_dict[param.TARGET_LANGUAGE], run._param_dict[param.TARGET_REGION]) \
+            if param.TARGET_LANGUAGE in run._param_dict.keys() \
+            else dict()
 
         self.tag = run._param_dict[param.PACKAGE_NAME] + "_" + str(datetime.datetime.now())
         self._rst_fail_msg = None
@@ -47,17 +52,17 @@ class proxy:
 
         self.install_test_apk()
         if self.get_result() is False:
-            self._rst_fail_msg = "安装待测Apk失败"
+            self._rst_fail_msg = "安装待测Apk失败\nInstall test apk error"
             return
 
         self.check_package_valid()
         if not self._rst:
-            self._rst_fail_msg = "指定包名不可用"
+            self._rst_fail_msg = "指定包名不可用\nSpecified package name invalid"
             return
 
         self.pre_setting()
         if self.get_result() is False:
-            self._rst_fail_msg = "设置预置条件失败"
+            self._rst_fail_msg = "设置预置条件失败\nPresetting error"
             return
 
         self.run_monkey_test()
@@ -100,7 +105,8 @@ class proxy:
         if self._PreSetter is None:
             self._PreSetter = PreSetter(self._run._serial,
                                         self._run._out_path,
-                                        self._run._param_dict[param.PACKAGE_NAME])
+                                        self._run._param_dict[param.PACKAGE_NAME],
+                                        self._preset_target_region_language)
         self._PreSetter.download_or_upgrade_apk()
         self._PreSetter.install_downloaded_apk()
         self._rst = self._PreSetter.get_result()
@@ -157,7 +163,8 @@ class proxy:
         if self._PreSetter is None:
             self._PreSetter = PreSetter(self._run._serial,
                                         self._run._out_path,
-                                        self._run._param_dict[param.PACKAGE_NAME])
+                                        self._run._param_dict[param.PACKAGE_NAME],
+                                        list())
         self._PreSetter.remove_accounts()
         LogUtil.log_end("remove_accounts")
         pass

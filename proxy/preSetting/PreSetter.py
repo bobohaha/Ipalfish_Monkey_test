@@ -15,6 +15,7 @@ from LocalResourcesSyncUtil import *
 import os
 import sys
 import time
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -33,10 +34,11 @@ class PreSetter:
     resource_pc_path = usr_home + monkey_resource_path
     resource_device_path = device_home + monkey_resource_path
 
-    def __init__(self, serial, out_path, package_name):
+    def __init__(self, serial, out_path, package_name, target_region_language):
         self._device_serial = serial
         self._log_out_path = out_path
         self._package_name_arr = package_name.split(",")
+        self._extra_params = target_region_language
         pass
 
     def install_downloaded_apk(self):
@@ -128,7 +130,7 @@ class PreSetter:
             LocalResourcesSyncUtil().download_objects_in_bucket_root(self.resource_pc_path)
 
     def fix_resource_name(self):
-        unexpected_name_substring = [" ", "-", "\(", "\)", "（", "）", "《", "》","\&"]
+        unexpected_name_substring = [" ", "-", "\(", "\)", "（", "）", "《", "》", "\&"]
         target_substring = '_'
         for sub in unexpected_name_substring:
             ShellUtil.rename_sub_string(sub, target_substring, self.resource_pc_path, "*")
@@ -187,10 +189,11 @@ class PreSetter:
             UsbUtil.make_sure_usb_connected(self._device_serial, "0")
             KillProcessUtil.kill_device_process(self._device_serial, self.PRESETTING_PKG.strip(".test"))
             UsbUtil.make_sure_usb_connected(self._device_serial, "0")
-            AndroidJUnitRunnerUtil.run_adb_command_output(self._device_serial,
-                                                          class_name,
-                                                          self.PRESETTING_PKG,
-                                                          self.rstFileName)
+            AndroidJUnitRunnerUtil.run_adb_command_output_with_extra_param(self._device_serial,
+                                                                           class_name,
+                                                                           self.PRESETTING_PKG,
+                                                                           self.rstFileName,
+                                                                           self._extra_params)
             rst = AndroidJUnitRunnerUtil.analysis_instrument_run_result(self.rstFileName)
             print(str(_), "Test result: ", str(rst))
             if rst is True:
