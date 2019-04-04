@@ -71,6 +71,14 @@ class Jiras(BaseModel):
     tag = CharField()
 
 
+class UseInfo(BaseModel):
+    user_name = CharField()
+    test_type = CharField()
+    test_package_name = CharField()
+    test_done = IntegerField()
+    tag = CharField()
+
+
 def create_tables():
     with monkey_bug_db:
         monkey_bug_db.create_tables([Bugs, BugFile, BugJira, BugRom, Jiras])

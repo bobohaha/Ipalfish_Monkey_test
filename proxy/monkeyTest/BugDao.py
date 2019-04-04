@@ -249,6 +249,30 @@ class BugDao:
             print "delete_record_from_bug_jira_table error: ", why
         pass
 
+    @staticmethod
+    def add_user_info_record(user_name, test_type, test_package_name, tag):
+        print "add_user_info_record: [{},{},{},{}]".format(user_name, test_type, test_package_name, tag)
+        use_info = UseInfo(user_name=user_name,
+                           test_type=test_type,
+                           test_done=0,
+                           test_package_name=test_package_name,
+                           tag=tag)
+        try:
+            use_info.save()
+            return True
+        except Exception, why:
+            print "add_user_info_record error: ", why
+            return False
+
+    @staticmethod
+    def add_test_done_to_use_info_record(tag):
+        try:
+            UseInfo.update(test_done=1).where(UseInfo.tag == tag).execute()
+            return True
+        except Exception, why:
+            print "add_test_done_to_use_info_record error: ", why
+            return False
+
 
 # if __name__ == "__main__":
 #     # bugs = [{u'pkgName': u'com.mi.android.globallauncher', u'det': u'----- pid 8999 at 2019-01-08 07:54:42 -----\nCmd line: com.mi.android.globallauncher\n"main" prio=5 tid=1 Native\n  | group="main" sCount=1 dsCount=0 flags=1 obj=0x74b59730 self=0x7a1740dc00\n  | sysTid=2646 nice=-10 cgrp=default sched=0/0 handle=0x7a9c0839a8\n  | state=S schedstat=( 2067011615040 446995985270 3470590 ) utm=171165 stm=35536 core=3 HZ=100\n  | stack=0x7feb8c3000-0x7feb8c5000 stackSize=8MB\n  | held mutexes=\n  kernel: __switch_to+0x8c/0x98\n  kernel: binder_thread_read+0x3e4/0x1240\n  kernel: binder_ioctl_write_read.constprop.37+0x1c8/0x2f8\n  kernel: binder_ioctl+0x1f8/0x688\n  kernel: do_vfs_ioctl+0x708/0x7f0\n  kernel: SyS_ioctl+0x60/0x88\n  kernel: __sys_trace_return+0x0/0x4\n  native: #00 pc 000000000006a498  /system/lib64/libc.so (__ioctl+4)\n  native: #01 pc 0000000000024404  /system/lib64/libc.so (ioctl+136)\n  native: #02 pc 0000000000054ac8  /system/lib64/libbinder.so (android::IPCThreadState::talkWithDriver(bool)+256)\n  native: #03 pc 00000000000558b4  /system/lib64/libbinder.so (android::IPCThreadState::waitForResponse(android::Parcel*, int*)+340)\n  native: #04 pc 0000000000055600  /system/lib64/libbinder.so (android::IPCThreadState::transact(int, unsigned int, android::Parcel const&, android::Parcel*, unsigned int)+224)\n  native: #05 pc 000000000004c380  /system/lib64/libbinder.so (android::BpBinder::transact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int)+144)\n  native: #06 pc 0000000000128ab4  /system/lib64/libandroid_runtime.so (???)\n  native: #07 pc 000000000091bcc4  /system/framework/arm64/boot-framework.oat (Java_android_os_BinderProxy_transactNative__ILandroid_os_Parcel_2Landroid_os_Parcel_2I+196)\n  at android.os.BinderProxy.transactNative(Native method)\n  at android.os.BinderProxy.transact(Binder.java:774)\n  at android.app.IActivityManager$Stub$Proxy.getProviderMimeType(IActivityManager.java:6726)\n  at android.content.ContentResolver.getType(ContentResolver.java:579)\n  at android.content.Intent.resolveType(Intent.java:6853)\n  at android.content.Intent.resolveTypeIfNeeded(Intent.java:6875)\n  at android.app.Instrumentation.execStartActivity(Instrumentation.java:1619)\n  at android.app.Activity.startActivityForResult(Activity.java:4555)\n  at com.miui.home.launcher.Launcher.startActivityForResult(Launcher.java:3830)\n  at com.miui.home.launcher.Launcher.startActivityForResult(Launcher.java:3850)\n  at android.app.Activity.startActivity(Activity.java:4874)\n  at android.app.Activity.startActivity(Activity.java:4842)\n  at com.mi.android.pocolauncher.assistant.cards.shortcut.util.ShortcutUtil.startCalendar(ShortcutUtil.java:395)\n  at com.mi.android.pocolauncher.assistant.cards.shortcut.util.ShortcutUtil.startFunctionActivity(ShortcutUtil.java:302)\n  at com.mi.android.pocolauncher.assistant.cards.shortcut.adapter.ShortcutAdapter.lambda$bindAppEntry$1$ShortcutAdapter(ShortcutAdapter.java:161)\n  at com.mi.android.pocolauncher.assistant.cards.shortcut.adapter.ShortcutAdapter$$Lambda$1.onClick(unavailable:-1)\n  at android.view.View.performClick(View.java:6304)\n  at android.view.View$PerformClick.run(View.java:24803)\n  at android.os.Handler.handleCallback(Handler.java:794)\n  at android.os.Handler.dispatchMessage(Handler.java:99)\n  at android.os.Looper.loop(Looper.java:176)\n  at android.app.ActivityThread.main(ActivityThread.java:6651)\n  at java.lang.reflect.Method.invoke(Native method)\n  at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:547)\n  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:824)\n\n', u'pid': 2646, u'summary': u'Binder:Proxy.getProviderMimeType\u2190ContentResolver.getType\u2190Intent.resolveType\u2190Intent.resolveTypeIfNeeded', u'dgt': u'224efdcd919a94fd983e97850', u'time': u'01-08 07:54:41.634', u'type': u'crash'}]

@@ -2,7 +2,7 @@
 from proxy.utils.JIRAParam import *
 
 # 报告人
-USERNAME = "gmiui-qad-sanity"  # "gmiui-qad-sanity"
+USERNAME = "gmiui-qad-ci"  # "gmiui-qad-sanity"
 PASSWORD = "XmTUn166F1q2"  # "XmTUn166F1q2"
 ISSUE_DEFAULT_OWNER = "yangyamei"
 

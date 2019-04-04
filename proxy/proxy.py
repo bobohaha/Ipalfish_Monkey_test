@@ -5,6 +5,8 @@ import sys
 import param
 from monkeyTest.MonkeyApkTester import MonkeyApkTester
 from preSetting.PreSetter import PreSetter
+from monkeyTest.BugDao import BugDao
+from monkeyTest.MonkeyJiraParam import USERNAME
 from utils.TestRegionLanguageBuilder import TestRegionLanguageBuilder
 from recoverDevice.DeviceRecover import DeviceRecover
 from skipOOBE.SkipOOBE import SkipOOBE
@@ -23,17 +25,20 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.1.17.0")
+        LogUtil.log("Code version: V4.1.18.0")
         DependenciesUtil.install_dependencies()
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None
 
-        self._preset_target_region_language = TestRegionLanguageBuilder.get_target_region_language(run._param_dict[param.TARGET_LANGUAGE], run._param_dict[param.TARGET_REGION]) \
+        self._preset_target_region_language = TestRegionLanguageBuilder.get_target_region_language(run._param_dict[param.TARGET_LANGUAGE],
+                                                                                                   run._param_dict[param.TARGET_REGION]) \
             if param.TARGET_LANGUAGE in run._param_dict.keys() \
             else dict()
 
         self.tag = run._param_dict[param.PACKAGE_NAME] + "_" + str(datetime.datetime.now())
+        self.is_auto_test = run._param_dict[param.TEST_APK_BUILD_VERSION] != "None"
+        self.tester = USERNAME if self.is_auto_test else run._param_dict[param.TESTER]
         self._rst_fail_msg = None
         self._test_information = None
         self._kernel_issues = None
@@ -182,3 +187,16 @@ class proxy:
                               self._kernel_issues,
                               self._not_submitted_issues).generate_result_report()
         pass
+
+    def record_test_info(self):
+        for _ in range(0, 3):
+            if BugDao.add_user_info_record(user_name=self.tester,
+                                           test_type="Monkey",
+                                           test_package_name=self._run._param_dict[param.PACKAGE_NAME],
+                                           tag=self.tag):
+                return True
+
+    def record_test_done(self):
+        for _ in range(0, 3):
+            if BugDao.add_test_done_to_use_info_record(self.tag):
+                return True
