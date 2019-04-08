@@ -22,7 +22,7 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.1.16.2")
+        LogUtil.log("Code version: V4.1.16.3")
         DependenciesUtil.install_dependencies()
         self._run = run
         self._MonkeyApkTester = None

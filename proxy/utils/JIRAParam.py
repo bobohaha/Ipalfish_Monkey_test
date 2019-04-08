@@ -47,6 +47,7 @@ ISSUE_TYPE_BUG = "bug"
 COMPONENT_GLOBAL_TABLECHECK = "Global-桌面布局"
 COMPONENT_ANDROID_ONE_LAUNCHER = "Global-Android one Launcher"
 COMPONENT_POCO_LAUNCHER = "Global-POCO Launcher"
+COMPONENT_POCO_Lite_LAUNCHER = "POCO Launcher Lite"
 COMPONENT_GLOBAL_DOWNLOAD_MANAGER = "Global-下载管理Download Manager"
 COMPONENT_GLOBAL_FILE_EXPLORE = "Global-文件管理器File Explore"
 COMPONENT_GLOBAL_PERSONAL_ASSISTANT = "Global-智能助理Personal Assistant"
@@ -195,12 +196,14 @@ def get_component_assignee(package_name):
         return COMPONENT_GLOBAL_MUSIC, "chenpeng7"
     if package_name == GlobalThemeManager:
         return COMPONENT_GLOBAL_THEME, "chenpeng7"
-    if package_name in (GlobalMIUIHome, MintLauncher) or package_name == (GlobalMIUIHome, MintLauncher):
+    if package_name == GlobalMIUIHome:
         return COMPONENT_POCO_LAUNCHER, "lvjian1"
+    if package_name == MintLauncher:
+        return COMPONENT_POCO_Lite_LAUNCHER, "lvjian1"
     if package_name == FunnyPuriVideo:
         return COMPONENT_GLOBAL_TREND_NEWS, "hanmengmeng"
     if package_name == MintBrowser:
-        return COMPONENT_GLOBAL_BROWSER, "chenchao12"
+        return COMPONENT_GLOBAL_BROWSER, "liyunting"
     if package_name == Browser:
         return COMPONENT_GLOBAL_BROWSER, "huangxueqing"
     if package_name == MiDrop:
