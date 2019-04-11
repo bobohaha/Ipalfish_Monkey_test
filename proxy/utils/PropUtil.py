@@ -13,9 +13,19 @@ class PropUtil:
     PROP_ROM_SIGNATURE = ["ro.build.tags"]
 
     @staticmethod
+    def try_get_prop(serial, prop, try_time=3):
+        result = None
+        while try_time > 0:
+            result = ADBUtil.get_prop(serial, prop)
+            if result:
+                return result
+            try_time -= 1
+        return result
+
+    @staticmethod
     def get_device_name(serial):
         for prop in PropUtil.PROP_DEVICE_PRODUCT:
-            result = ADBUtil.get_prop(serial, prop)
+            result = PropUtil.try_get_prop(serial, prop)
             if result:
                 return result
         raise PropUtil.PropertyNotFound("Get device name error")
@@ -23,7 +33,7 @@ class PropUtil:
     @staticmethod
     def get_mod_device_name(serial):
         for prop in PropUtil.PROP_MOD_DEVICE:
-            result = ADBUtil.get_prop(serial, prop)
+            result = PropUtil.try_get_prop(serial, prop)
             if result:
                 return result
         raise PropUtil.PropertyNotFound("Get mod device name error")
@@ -31,7 +41,7 @@ class PropUtil:
     @staticmethod
     def get_rom_version(serial):
         for prop in PropUtil.PROP_ROM_VERSION:
-            result = ADBUtil.get_prop(serial, prop)
+            result = PropUtil.try_get_prop(serial, prop)
             if result:
                 return result
         raise PropUtil.PropertyNotFound("Get rom version error")
@@ -39,7 +49,7 @@ class PropUtil:
     @staticmethod
     def get_android_version(serial):
         for prop in PropUtil.PROP_ANDROID_VERSION:
-            result = ADBUtil.get_prop(serial, prop)
+            result = PropUtil.try_get_prop(serial, prop)
             if result:
                 return result
         raise PropUtil.PropertyNotFound("Get android version error")
@@ -47,7 +57,7 @@ class PropUtil:
     @staticmethod
     def get_device_rom_signature(serial):
         for prop in PropUtil.PROP_ROM_SIGNATURE:
-            result = ADBUtil.get_prop(serial, prop)
+            result = PropUtil.try_get_prop(serial, prop)
             if result:
                 return result
         raise PropUtil.PropertyNotFound("Get rom signature error")

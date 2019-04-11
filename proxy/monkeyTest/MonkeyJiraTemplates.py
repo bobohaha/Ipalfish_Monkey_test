@@ -33,7 +33,7 @@ RD_TEST_INTRODUCTION = "此为手动触发monkey测试的测试结果, 有问题
 
 class JiraMonkeySummaryTemplate(Template):
     def __init__(self):
-        Template.__init__(self, '[ Monkey ]$is_auto[ $bug_type ] $bug_summary')
+        Template.__init__(self, '$is_auto[ Monkey ][ $bug_type ] $bug_summary')
         pass
 
 

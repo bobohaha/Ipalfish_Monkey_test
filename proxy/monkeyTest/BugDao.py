@@ -9,12 +9,12 @@ class BugDao:
     @staticmethod
     def save_bug_detail(bug_detail_dict, tag):
         print "save_bug_detail: ", str(bug_detail_dict), tag
-        _bug_summary = bug_detail_dict['summary']
+        _bug_summary = str(bug_detail_dict['summary'])
         if len(_bug_summary) > 150:
             _bug_summary = _bug_summary[:150] + "..."
 
         try:
-            _bug = Bugs(bug_detail=bug_detail_dict['det'],
+            _bug = Bugs(bug_detail=str(bug_detail_dict['det']),
                         bug_signature_code=bug_detail_dict['dgt'],
                         bug_pid=bug_detail_dict['pid'],
                         bug_package_name=bug_detail_dict['pkgName'],

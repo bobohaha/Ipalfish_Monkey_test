@@ -728,9 +728,13 @@ class MonkeyApkTester:
     @classmethod
     def get_previous_time(cls, time1, time2):
         time_format = "%Y-%m-%d %H:%M:%S.%f"
-        _time1 = datetime.datetime.strptime(time1, time_format)
-        _time2 = datetime.datetime.strptime(time2, time_format)
-        return time1 if _time2 >= _time1 else time2
+        try:
+            _time1 = datetime.datetime.strptime(time1, time_format)
+            _time2 = datetime.datetime.strptime(time2, time_format)
+            return time1 if _time2 >= _time1 else time2
+        except Exception, why:
+            print "get_previous_time error", why
+            return time1
         pass
 
     def get_issue_detail(self, bug, test_info):
