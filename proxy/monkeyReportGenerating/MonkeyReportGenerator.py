@@ -33,13 +33,19 @@ class MonkeyReportGenerator(object):
         test_result_item.attr['style'] = "background: white; color: green" \
             if self.test_result.rst else "background: white; color: red"
         test_result_item.append(Data(test_result_str))
-        if self.test_result.fail_msg is None or self.test_result.fail_msg is "None":
+
+        no_fail_msg = self.test_result.fail_msg is None or self.test_result.fail_msg == "None"
+        if no_fail_msg:
             LogUtil.log("no fail reason .....")
             root, fail_reason_item = self.report_content.fst_with_root('tr', ('id', 'fail-reason'))
             root.remove(fail_reason_item)
         else:
             fail_reason_msg_item = self.report_content.byid('fail-reason-msg')
             fail_reason_msg_item.append(Data(self.test_result.fail_msg))
+
+        send_report_item = self.report_content.byid('send-report')
+        send_report_str = "true" if self.test_result.rst is False and no_fail_msg else "false"
+        send_report_item.append(Data(send_report_str))
         LogUtil.log_end("process_test_result")
         pass
 
