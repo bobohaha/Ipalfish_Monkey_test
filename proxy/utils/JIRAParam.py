@@ -11,6 +11,7 @@ JIRA_ADD_ATTACHMENT_API = '/rest/api/2/issue/{issueIdOrKey}/attachments'
 JIRA_ADD_COMMENT_API = '/rest/api/2/issue/{issueIdOrKey}/comment'
 JIRA_ADD_WATCHER_API = '/rest/api/2/issue/{issueIdOrKey}/watchers'
 JIRA_TRANSITION_API = '/rest/api/2/issue/{issueIdOrKey}/transitions'
+JIRA_GET_ISSUE_INFORMATION_API = "/rest/api/2/issue/{issueIdOrKey}"
 
 JIRA_FIELDS = "fields"
 JIRA_UPDATE = "update"
@@ -180,6 +181,7 @@ MODEL_TAG_ALL_DEVICES = "ALL DEVICES"
 
 LABEL_GLOBAL_DEFAULT = "global"
 LABEL_GLOBAL_DEV_CI = "global_dev_ci"
+LABEL_GLOBAL_AUTO_MONKEY = "global_auto_monkey"
 
 
 def get_miui_model(mod_device_name):

@@ -500,8 +500,9 @@ class MonkeyApkTester:
 
                         if bug_jira is not None and bug_jira.jira_id != "":
                             jira_key = bug_jira.jira_id
-                            if MonkeyJiraUtil().is_can_reopen_issue(jira_key):
-                                MonkeyJiraUtil().change_issue_to_reopen(jira_key)
+                            can_reopen, reopen_id = MonkeyJiraUtil().is_can_reopen_issue(jira_key)
+                            if can_reopen and not MonkeyJiraUtil().is_duplicate_issue(jira_id_or_key=jira_key):
+                                MonkeyJiraUtil().change_issue_to_reopen(jira_key, reopen_id)
                             self.add_comment(jira_key, issue_detail)
                             break
 

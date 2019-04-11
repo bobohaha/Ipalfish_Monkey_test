@@ -287,6 +287,33 @@ class JIRAUtil:
             print "add_watchers error: ", why
             print traceback.format_exc()
 
+    def get_issue_information(self, jira_id_or_key):
+        get_issue_information_url = '{}:{}{}'.format(JIRAParam.JIRA_HOST,
+                                                     JIRAParam.JIRA_PORT,
+                                                     JIRAParam.JIRA_GET_ISSUE_INFORMATION_API.format(issueIdOrKey=jira_id_or_key))
+        try:
+            self._jira_session.add_header('Content-Type', 'application/json')
+            r = self._jira_session.get(get_issue_information_url)
+            print r, r.status_code, r.content
+            if r.status_code == 200:
+                return True, r.json()
+            else:
+                return False, dict()
+        except Exception, why:
+            print "get_issue_information error", why
+            return False, dict()
+
+    def get_issue_resolution(self, jira_id_or_key):
+        rst, content = self.get_issue_information(jira_id_or_key)
+        if rst:
+            return content['fields']['resolution']
+        else:
+            return dict()
+
+    def is_duplicate_issue(self, jira_id_or_key):
+        resolution = self.get_issue_resolution(jira_id_or_key)
+        return 'name' in resolution.keys() and "duplicate" in resolution['name'].lower()
+
     def is_can_reopen_issue(self, jira_id_or_key):
         get_transition_url = '{}:{}{}'.format(JIRAParam.JIRA_HOST,
                                               JIRAParam.JIRA_PORT,
@@ -299,13 +326,13 @@ class JIRAUtil:
                 transitions = r.json()['transitions']
                 for transition in transitions:
                     if transition['name'] == "Reopen Issue":
-                        return True
+                        return True, transition['id']
         except Exception, why:
             print "is_can_reopen_issue error: ", why
             print traceback.format_exc()
-        return False
+        return False, "0"
 
-    def change_issue_to_reopen(self, jira_id_or_key):
+    def change_issue_to_reopen(self, jira_id_or_key, reopen_id):
         get_transition_url = '{}:{}{}'.format(JIRAParam.JIRA_HOST,
                                               JIRAParam.JIRA_PORT,
                                               JIRAParam.JIRA_TRANSITION_API.format(issueIdOrKey=jira_id_or_key))
@@ -313,7 +340,7 @@ class JIRAUtil:
             self._jira_session.add_header('Content-Type', 'application/json')
             post_data = json.dumps({
                 "transition": {
-                    "id": "211"
+                    "id": reopen_id
                 }
             })
             r = self._jira_session.post(get_transition_url, _data=post_data)
