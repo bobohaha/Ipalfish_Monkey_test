@@ -57,7 +57,7 @@ COMPONENT_GLOBAL_GAME_CENTER = "Global-游戏中心Games"
 COMPONENT_GLOBAL_MUSIC = "Global-音乐Music"
 COMPONENT_GLOBAL_THEME = "Global-国际主题 Theme"
 COMPONENT_GLOBAL_TREND_NEWS = "TrendNews"
-COMPONENT_GLOBAL_MI_DROP = "Global-快传Mi Drop"
+COMPONENT_GLOBAL_MI_DROP = "快传 Mi Drop"
 
 # 优先级(priority values)
 PRIORITY_BLOCKER = "Blocker"
@@ -168,11 +168,12 @@ MODEL_TAG = {
     "grus_global": "F2_global",
     "andromeda_global": "E5G_global",
     "tiare_global": "C3G_global_AndroidGo//Please move platform issues to HONGMI",
-    # "": "C3E_global//Please move platform issues to HONGMI",
+    "pine_global": "C3E_global//Please move platform issues to HONGMI",
     "onclite_global": "F6lite_global//Please move platform issues to HTH",
     "violet_global": "F7B_global//Please move platform issues to HTH",
-    # "": "F10_global",
-    # "": "F11_global",
+    "davinci_global": "F10_global",
+    "davinciin_global": "F10_global",
+    "raphael_global": "F11_global",
     "lotus_global": "F9_global",
     "clover_global": "D9P//请移至华勤项目"
 }
@@ -195,7 +196,7 @@ def get_component_assignee(package_name):
     if package_name == GlobalFileExplorer:
         return COMPONENT_GLOBAL_FILE_EXPLORE, "zhouhongyu"
     if package_name == MUSIC:
-        return COMPONENT_GLOBAL_MUSIC, "chenpeng7"
+        return COMPONENT_GLOBAL_MUSIC, "huangyu6"
     if package_name == GlobalThemeManager:
         return COMPONENT_GLOBAL_THEME, "chenpeng7"
     if package_name == GlobalMIUIHome:

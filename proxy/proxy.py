@@ -25,7 +25,7 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.1.18.3")
+        LogUtil.log("Code version: V4.1.18.4")
         DependenciesUtil.install_dependencies()
         self._run = run
         self._MonkeyApkTester = None
@@ -57,17 +57,20 @@ class proxy:
 
         self.install_test_apk()
         if self.get_result() is False:
-            self._rst_fail_msg = "安装待测Apk失败\nInstall test apk error"
+            self._rst_fail_msg = "安装待测Apk失败<BR>" \
+                                 "Install test apk error"
             return
 
         self.check_package_valid()
         if not self._rst:
-            self._rst_fail_msg = "指定包名不可用\nSpecified package name invalid"
+            self._rst_fail_msg = "指定包名不可用<BR>" \
+                                 "Specified package name invalid"
             return
 
         self.pre_setting()
         if self.get_result() is False:
-            self._rst_fail_msg = "设置预置条件失败\nPresetting error"
+            self._rst_fail_msg = "设置预置条件失败<BR>" \
+                                 "Presetting error"
             return
 
         self.run_monkey_test()
