@@ -2,17 +2,19 @@ import os
 
 try:
     from peewee import *
+    from playhouse.pool import PooledMySQLDatabase
 except ImportError:
     os.system("pip install peewee")
     from peewee import *
+    from playhouse.pool import PooledMySQLDatabase
 
 try:
-    monkey_bug_db = MySQLDatabase('monkey_bug_db_test', user='root', password='100%SanityXm',
-                                  host="10.232.52.151", port=3306)
+    monkey_bug_db = PooledMySQLDatabase('monkey_bug_db_test', user='root', password='100%SanityXm',
+                                        host="10.232.52.151", port=3306)
 except ImproperlyConfigured:
     os.system("pip install PyMySQL")
-    monkey_bug_db = MySQLDatabase('monkey_bug_db_test', user='root', password='100%SanityXm',
-                                  host="10.232.52.151", port=3306)
+    monkey_bug_db = PooledMySQLDatabase('monkey_bug_db_test', user='root', password='100%SanityXm',
+                                        host="10.232.52.151", port=3306)
 
 
 class BaseModel(Model):
@@ -90,17 +92,18 @@ def delete_tables():
 
 
 def insert(table_name):
-    table_name.save()
+    with monkey_bug_db:
+        table_name.save()
 
 
 def update(table_name):
-    table_name.update()
-
+    with monkey_bug_db:
+        table_name.update()
 
 # if __name__ == "__main__":
-    # bug_jira = BugJira(id=2, bug_signature_code="adbsdkajfiwhfvjenvk222", jira_id="abuvrg", tag="asgweqgvqag222222")
-    # BugJira.update(jira_id="abuvrg00000").where(BugJira.bug_signature_code == "adbsdkajfiwhfvjenvk222").execute()
-    # update(bug_jira)
-    # r = BugFile.select().where(BugFile.bug_signature_code == "224efdcd919a94fd983e97850aba").get()
-    # r = BugFile.get(BugFile.bug_signature_code == "224efdcd919a94fd983e97850aba1d3d")
-    # print r
+# bug_jira = BugJira(id=2, bug_signature_code="adbsdkajfiwhfvjenvk222", jira_id="abuvrg", tag="asgweqgvqag222222")
+# BugJira.update(jira_id="abuvrg00000").where(BugJira.bug_signature_code == "adbsdkajfiwhfvjenvk222").execute()
+# update(bug_jira)
+# r = BugFile.select().where(BugFile.bug_signature_code == "224efdcd919a94fd983e97850aba").get()
+# r = BugFile.get(BugFile.bug_signature_code == "224efdcd919a94fd983e97850aba1d3d")
+# print r
