@@ -35,8 +35,7 @@ class AndroidJUnitRunnerUtil:
         command = "adb -s " + serial + " shell am instrument -w -r"
         for extra_param_key in extra_param_dict.keys():
             command = command + " -e " + extra_param_key + " " + extra_param_dict[extra_param_key]
-        command = command + " -e class " + class_name + " " + pkg_name \
-                  + "/android.support.test.runner.AndroidJUnitRunner"
+        command = command + " -e class " + class_name + " " + pkg_name + "/android.support.test.runner.AndroidJUnitRunner"
 
         print command
         return command

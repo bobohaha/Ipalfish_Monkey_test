@@ -1,9 +1,10 @@
 import os
 
-from PathUtil import PathUtil
-import proxy.proxy
 
 class GitUtil:
+
+    def __init__(self):
+        pass
 
     @staticmethod
     def force_clone(git_site, folder_name):

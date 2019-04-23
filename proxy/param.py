@@ -6,6 +6,18 @@ from params import Region
 # Param from manifest
 PACKAGE_NAME = "PACKAGE_NAME"
 TEST_APK_BUILD_VERSION = "TEST_APK_BUILD_VERSION"
+MONKEY_ROUND = "MONKEY_ROUND"
+MONKEY_ROUND_MAXIMUM_TIME = "MONKEY_ROUND_MAXIMUM_TIME"
+MONKEY_SEED = "MONKEY_SEED"
+MONKEY_PARAM = "MONKEY_PARAM"
+TARGET_LANGUAGE = "TARGET_LANGUAGE"
+TARGET_REGION = "TARGET_REGION"
+TESTER = "TESTER"
+ISSUE_WATCHERS = "ISSUE_WATCHERS"
+
+# Instrumentation key of target language and region
+TEST_TARGET_LANGUAGE_KEY = "ChangeToLanguage"
+TEST_TARGET_REGION_KEY = "ChangeToRegion"
 
 # Need connect wifi in OOBE
 NEED_CONNECT_WIFI_DEVICE = []
@@ -43,7 +55,9 @@ PRESETTING_CASE_PACKAGE = {PackageName.GAME_CENTER: CaseName.GAME_CENTER_PRESETT
                            PackageName.MiDrop: CaseName.MI_DROP_PRESETTING,
                            PackageName.Browser: CaseName.BROWSER_PRESETTING,
                            PackageName.MintBrowser: CaseName.MINT_BROWSER_PRESETTING,
-                           PackageName.Download: CaseName.DOWNLOAD_PRESETTING}
+                           PackageName.DownloadUi: CaseName.DOWNLOAD_PRESETTING,
+                           PackageName.MintLauncher: CaseName.POCO_LAUNCHER_PRESETTING,
+                           PackageName.PersonalAssistant: CaseName.GLOBAL_PERSONAL_ASSISTANT_PRESETTING}
 
 # Package need local resource
 PACKAGE_NEED_LOCAL_RESOURCE = [PackageName.MUSIC,

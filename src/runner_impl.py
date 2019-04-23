@@ -14,6 +14,7 @@ class RunnerImpl(BaseRunner):
 
     def on_prepare(self):
         """ 前置条件准备 """
+        self._proxy.record_test_info()
         print 'prepare'
 
     def on_start(self):
@@ -30,4 +31,6 @@ class RunnerImpl(BaseRunner):
         停止所有已开进程或线程,并返回执行结果
         :return: 执行结果: 成功:True 失败:False
         """
+        self._proxy.generate_test_report()
+        self._proxy.record_test_done()
         return self._proxy.get_result()

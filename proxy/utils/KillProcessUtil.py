@@ -11,7 +11,7 @@ class KillProcessUtil:
         command = "adb -s " + serial + " shell ps -A | grep -i " + process_name + " | cut -d ' ' -f 2-11"
         output = os.popen(command)
         process_id_rst = output.read().strip()
-        if ( len(process_id_rst) > 1 ):
+        if len(process_id_rst) > 1:
             process_id_str = process_id_rst.replace(" ", "")
             process_id_str = process_id_str.replace("\n", ",")
             process_id_ary = process_id_str.split(",")
@@ -34,7 +34,7 @@ class KillProcessUtil:
 
         output = os.popen(command)
         process_id_rst = output.read().strip()
-        if ( len(process_id_rst) > 1 ):
+        if len(process_id_rst) > 1:
             process_id_str = process_id_rst.replace(" ", "")
             process_id_str = process_id_str.replace("\n", ",")
             process_id_ary = process_id_str.split(",")

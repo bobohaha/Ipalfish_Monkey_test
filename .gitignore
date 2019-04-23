@@ -1,7 +1,9 @@
+.idea
 *.iml
-/.idea/*.xml
 *.pyc
-/proxy/preSetting/PreSetter/*
-/proxy/recoverDevice/recoverDevice/*
-/proxy/skipOOBE/SkipOOBE/*
-/proxy/usb/ResetUsb/*
+proxy/preSetting/PreSetter/*
+proxy/recoverDevice/recoverDevice/*
+proxy/skipOOBE/SkipOOBE/*
+proxy/usb/ResetUsb/*
+.DS_Store
+*.zip
