@@ -454,6 +454,10 @@ class MonkeyApkTester:
         if bugs is not None:
             LogUtil.log("Having bugs...")
             for bug in bugs:
+                if bug.bug_summary == "None" or bug.bug_detail == "None":
+                    LogUtil.log("Issues with inadequate information: " + bug)
+                    self.save_to_not_submitted_issues(bug.bug_signature_code, bug.bug_time, bug.bug_time, bug.bug_summary, bug.bug_package_name)
+                    continue
                 if bug.bug_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
                     LogUtil.log("Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
                     self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary, bug.bug_type, bug.bug_package_name)
