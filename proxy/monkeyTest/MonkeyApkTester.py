@@ -455,7 +455,7 @@ class MonkeyApkTester:
             LogUtil.log("Having bugs...")
             for bug in bugs:
                 if bug.bug_summary == "None" or bug.bug_detail == "None":
-                    LogUtil.log("Issues with inadequate information: " + bug)
+                    LogUtil.log("Issues with inadequate information: " + str(bug))
                     self.save_to_not_submitted_issues(bug.bug_signature_code, bug.bug_time, bug.bug_time, bug.bug_summary, bug.bug_package_name)
                     continue
                 if bug.bug_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
