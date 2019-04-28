@@ -1,4 +1,0 @@
-galaxy-fds-sdk>=1.2.10
-XlsxWriter>=1.1.2
-peewee>=3.8.1
-PyMySQL>=v0.9.3

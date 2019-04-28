@@ -4,15 +4,13 @@ import sys
 
 import param
 from monkeyTest.MonkeyApkTester import MonkeyApkTester
-from preSetting.PreSetter import PreSetter
+from global_ci_util.presetting import PreSetter
 from monkeyTest.BugDao import BugDao
 from monkeyTest.MonkeyJiraParam import USERNAME
-from utils.TestRegionLanguageBuilder import TestRegionLanguageBuilder
-from recoverDevice.DeviceRecover import DeviceRecover
-from skipOOBE.SkipOOBE import SkipOOBE
-from utils.DependenciesUtil import DependenciesUtil
-from utils.LogUtil import LogUtil
+from global_ci_util.presetting import TestRegionLanguageBuilder
+from global_ci_util import LogUtil
 from monkeyReportGenerating.MonkeyReportGenerator import MonkeyReportGenerator
+from .config.account import *
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -25,8 +23,7 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.1.18.7")
-        DependenciesUtil.install_dependencies()
+        LogUtil.log("Code version: V4.2.0.0")
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None
@@ -47,13 +44,6 @@ class proxy:
 
     def do_script(self):
         LogUtil.log_start("doScript")
-        # self.recover_device()
-        # if self.get_result() is False:
-        #     return
-        #
-        # self.skip_oobe()
-        # if self.get_result() is False:
-        #     return
 
         self.install_test_apk()
         if self.get_result() is False:
@@ -78,43 +68,15 @@ class proxy:
         self.remove_accounts()
         LogUtil.log_end("doScript")
 
-    def recover_device(self):
-        LogUtil.log_start("Recovery Devices for Monkey Test")
-        _DeviceRecover = DeviceRecover(self._run._serial)
-        _DeviceRecover.recover_device()
-        self._rst = _DeviceRecover.get_result()
-        LogUtil.log_end("Recovery Devices for Monkey Test: " + str(self._rst))
-
-    def skip_oobe(self):
-        LogUtil.log_start("Skip OOBE for Monkey Test")
-        test_region_language = {}
-        _SkipOOBE = SkipOOBE(self._run._serial,
-                             self._run._out_path,
-                             self._run._param_dict,
-                             test_region_language)
-        _SkipOOBE.download_or_upgrade_apk()
-        _SkipOOBE.make_sure_in_oobe()
-        _SkipOOBE.install_downloaded_apk()
-        self._rst = _SkipOOBE.get_result()
-        if self._rst is False:
-            LogUtil.log_end("Skip OOBE for Monkey Test: Failed: install skipOOBE.apk error")
-            return
-
-        _SkipOOBE.run_skip_oobe()
-        self._rst = _SkipOOBE.get_result()
-        if self._rst is False:
-            LogUtil.log_end("Skip OOBE for Monkey Test: Failed: _SkipOOBE fail")
-            return
-        _SkipOOBE.clear_pkg_cache_in_device()
-        LogUtil.log_end("Skip OOBE for Monkey Test")
-
     def pre_setting(self):
         LogUtil.log_start("Presetting for Monkey Test")
         if self._PreSetter is None:
             self._PreSetter = PreSetter(self._run._serial,
                                         self._run._out_path,
                                         self._run._param_dict[param.PACKAGE_NAME],
-                                        self._preset_target_region_language)
+                                        self._preset_target_region_language,
+                                        fds_access_key=fds_access_key,
+                                        fds_access_secret=fds_access_secret)
         self._PreSetter.download_or_upgrade_apk()
         self._PreSetter.install_downloaded_apk()
         self._rst = self._PreSetter.get_result()
@@ -172,7 +134,9 @@ class proxy:
             self._PreSetter = PreSetter(self._run._serial,
                                         self._run._out_path,
                                         self._run._param_dict[param.PACKAGE_NAME],
-                                        list())
+                                        list(),
+                                        fds_access_key,
+                                        fds_access_secret)
         self._PreSetter.remove_accounts()
         LogUtil.log_end("remove_accounts")
         pass

@@ -1,4 +1,4 @@
-from proxy.utils.JIRAUtil import JIRAUtil
+from global_ci_util.jira import JIRAUtil
 from proxy.monkeyTest.MonkeyJiraParam import *
 
 

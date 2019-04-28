@@ -1,11 +1,11 @@
 from proxy.param import PACKAGE_NAME, TEST_APK_BUILD_VERSION, MONKEY_PARAM, MONKEY_ROUND, MONKEY_ROUND_MAXIMUM_TIME
-from proxy.utils.PropUtil import PropUtil
-from proxy.utils.ADBUtil import ADBUtil
+from global_ci_util import PropUtil
+from global_ci_util import ADBUtil
 from proxy.monkeyTest.BugDao import BugDao
-from proxy.utils.ehp_pyhon2 import *
-from proxy.utils.JIRAParam import JIRA_ISSUE_LINK
-from proxy.utils.PathUtil import PathUtil
-from proxy.utils.LogUtil import LogUtil
+from global_ci_util.report.ehp_pyhon2 import *
+from global_ci_util.params.jira_param import JIRA_ISSUE_LINK
+from global_ci_util import PathUtil
+from global_ci_util import LogUtil
 from proxy.monkeyTest.BugModel import Jiras
 
 import sys
