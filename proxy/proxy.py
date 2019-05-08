@@ -4,10 +4,10 @@ import sys
 
 import param
 from monkeyTest.MonkeyApkTester import MonkeyApkTester
-from global_ci_util.presetting import PreSetter
+from .preSetting import PreSetter
 from monkeyTest.BugDao import BugDao
 from monkeyTest.MonkeyJiraParam import USERNAME
-from global_ci_util.presetting import TestRegionLanguageBuilder
+from .preSetting import TestRegionLanguageBuilder
 from global_ci_util import LogUtil
 from monkeyReportGenerating.MonkeyReportGenerator import MonkeyReportGenerator
 from .config.account import *
@@ -23,7 +23,7 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.2.0.0")
+        LogUtil.log("Code version: V4.2.0.2")
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None

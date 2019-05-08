@@ -1,17 +1,17 @@
 # coding=utf-8
 import os
 
-GIT_URL = "http://v9.git.n.xiaomi.com/yangyamei/global_ci_util"
-PROJECT_NAME = "global_ci_util"
+GIT_URL = "http://v9.git.n.xiaomi.com/global_common/global_ci_util"
+PROJECT_NAME = "global-ci-util"
 
 
 def check_update():
     local_version = get_current_version()
     print('global_ci_util_manager.check_update(): current versio %s' % local_version)
-    if local_version:
+    if local_version is not None:
         # Only upgrade when new version available
-        install_command = 'pip2 install --upgrade git+%s#egg=%s>%s' % (
-            GIT_URL, PROJECT_NAME, local_version)
+        install_command = 'pip2 install --upgrade git+%s#egg=%s' % (
+            GIT_URL, PROJECT_NAME)
     else:
         install_command = 'pip2 install git+%s#egg=%s' % (GIT_URL, PROJECT_NAME)
 
