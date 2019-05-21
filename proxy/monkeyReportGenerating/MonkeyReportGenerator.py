@@ -261,7 +261,7 @@ class MonkeyReportGenerator(object):
                     issue_detail.monkey_round = index
                     issue_detail.monkey_start_time = monkey_kernel_issue[index]['monkey_start_time']
                     issue_detail.issue_fst_time = monkey_kernel_issue[index]['monkey_fst_time'][sig]
-                    issue_detail.issue_times = monkey_kernel_issue[index]['monkey_issue_times'][sig]
+                    issue_detail.issue_times = len(monkey_kernel_issue[index]['monkey_issue_times'][sig])
                     issue_detail.issue_summary = monkey_kernel_issue[index]['monkey_issue_summary'][sig]
                     self.issues.append(issue_detail)
             pass
