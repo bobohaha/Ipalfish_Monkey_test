@@ -5,19 +5,17 @@ import sys
 from time import sleep, time
 
 from proxy.param import MONKEY_SEED, PACKAGE_NAME, MONKEY_ROUND, MONKEY_PARAM, MONKEY_ROUND_MAXIMUM_TIME, ISSUE_WATCHERS, TESTER
-from proxy.utils.ShellUtil import ShellUtil
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
 import zipfile
+
 try:
     import zlib
+
     compression = zipfile.ZIP_DEFLATED
 except ImportError:
     compression = zipfile.ZIP_STORED
 
-from proxy.utils.BasUtil import BasUtil
+from global_ci_util import BasUtil
 from BugDao import BugDao
 from BugModel import *
 from MonkeyJiraTemplates import *
@@ -32,13 +30,19 @@ except ImportError:
 
 from proxy import param
 from proxy.monkeyTest.MonkeyApkSyncUtil import MonkeyApkSyncUtil
-from proxy.utils.ADBUtil import ADBUtil
-from proxy.utils.KillProcessUtil import KillProcessUtil
-from proxy.utils.LogUtil import LogUtil
-from proxy.utils.PathUtil import PathUtil
-from proxy.utils.PropUtil import PropUtil
-from proxy.utils.sign_apk.SignAPKUtil import SignAPKUtil
+from global_ci_util import ADBUtil
+from global_ci_util import KillProcessUtil
+from global_ci_util import LogUtil
+from global_ci_util import PropUtil
+from global_ci_util.sign_apk import SignAPKUtil
+from global_ci_util.params.jira_param import *
+from global_ci_util.params.package_name import *
+from global_ci_util import PathUtil
+from global_ci_util import ShellUtil
+from ..config.account import *
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 SLEEP_TIME_2MIN = 60 * 2
 
@@ -88,11 +92,9 @@ class MonkeyApkTester:
         self._param_dict = param_dict
         self._is_auto_test = True if self._param_dict[param.TEST_APK_BUILD_VERSION] != "None" else False
         self._seed = None
-        self._seed_specify = param_dict[MONKEY_SEED] if MONKEY_SEED in param_dict.keys() \
-                                                          and param_dict[MONKEY_SEED] is not None \
-                                                          and param_dict[MONKEY_SEED] != "None" \
-                                                          and param_dict[MONKEY_SEED] != "" \
-                                                          and param_dict[MONKEY_SEED] != " " else None
+        self._seed_specify = param_dict[MONKEY_SEED] \
+            if MONKEY_SEED in param_dict.keys() and param_dict[MONKEY_SEED] is not None and param_dict[MONKEY_SEED] != "None" and param_dict[MONKEY_SEED] != "" and param_dict[MONKEY_SEED] != " " \
+            else None
         self.clear_log_folder()
         self._device_name = PropUtil.get_mod_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
@@ -404,7 +406,7 @@ class MonkeyApkTester:
         pass
 
     def analyzing_and_saving(self, file_name, package):
-        bug_results = BasUtil().analysis(file_name, package)
+        bug_results = BasUtil(bas_username, bas_password).analysis(file_name, package)
         if isinstance(file_name, list):
             file_names = ""
             for name in file_name:

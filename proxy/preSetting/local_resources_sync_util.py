@@ -1,4 +1,4 @@
-from proxy.utils.ObjectSyncUtil import ObjectSyncUtil
+from global_ci_util.fds.object_sync_util import ObjectSyncUtil
 
 LOCAL_RESOURCES_DOWNLOAD_BUCKET = "test.resources"
 LOCAL_RESOURCES_LOCAL_NAME = "NONE"
@@ -6,8 +6,8 @@ LOCAL_RESOURCES_NUMBER = 60
 
 
 class LocalResourcesSyncUtil(ObjectSyncUtil):
-    def __init__(self):
-        ObjectSyncUtil.__init__(self, LOCAL_RESOURCES_DOWNLOAD_BUCKET,
+    def __init__(self, access_key, access_secret):
+        ObjectSyncUtil.__init__(self, access_key, access_secret, LOCAL_RESOURCES_DOWNLOAD_BUCKET,
                                 LOCAL_RESOURCES_NUMBER,
                                 LOCAL_RESOURCES_LOCAL_NAME)
         pass

@@ -1,5 +1,5 @@
 # coding=utf-8
-from proxy.utils.JIRAParam import *
+from global_ci_util.params.jira_param import *
 
 # 报告人
 USERNAME = "gmiui-qad-ci"  # "gmiui-qad-sanity"
@@ -26,3 +26,6 @@ REPRODUCTIVITY_MONKEY = REPRODUCTIVITY_EVERY_TIME
 
 # Test stage
 TEST_STAGE_MONKEY = TEST_STAGE_DEVELOPMENT
+
+# Label
+LABEL_GLOBAL_AUTO_MONKEY = "global_auto_monkey"

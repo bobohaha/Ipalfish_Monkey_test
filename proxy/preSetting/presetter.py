@@ -1,20 +1,17 @@
 # coding=utf-8
 
-from proxy.utils.PathUtil import PathUtil
-from proxy.utils.LogUtil import LogUtil
-from proxy.usb.UsbUtil import UsbUtil
-from proxy.utils.ADBUtil import ADBUtil
-from proxy.utils.ShellUtil import ShellUtil
-from proxy.utils.KillProcessUtil import KillProcessUtil
-from proxy.param import *
-from proxy.params.CaseName import *
-from proxy.utils.AndroidJUnitRunnerUtil import AndroidJUnitRunnerUtil
-from PreSettingApkSyncUtil import *
-from LocalResourcesSyncUtil import *
+from global_ci_util import PathUtil, LogUtil, ADBUtil, ShellUtil, KillProcessUtil
+from global_ci_util.usb.usb_util import UsbUtil
 
+from global_ci_util.android_junit_runner_util import AndroidJUnitRunnerUtil
+from .presetting_apk_sync_util import PreSettingApkSyncUtil
+from .local_resources_sync_util import LocalResourcesSyncUtil
+from .local_resources_sync_util import LOCAL_RESOURCES_NUMBER
+
+from global_ci_util.params.presetting import *
 import os
-import sys
 import time
+import sys
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -34,11 +31,13 @@ class PreSetter:
     resource_pc_path = usr_home + monkey_resource_path
     resource_device_path = device_home + monkey_resource_path
 
-    def __init__(self, serial, out_path, package_name, target_region_language):
+    def __init__(self, serial, out_path, package_name, target_region_language, fds_access_key, fds_access_secret):
         self._device_serial = serial
         self._log_out_path = out_path
         self._package_name_arr = package_name.split(",")
         self._extra_params = target_region_language
+        self._fds_access_key = fds_access_key
+        self._fds_access_secret = fds_access_secret
         pass
 
     def install_downloaded_apk(self):
@@ -57,7 +56,7 @@ class PreSetter:
             os.mkdir(self.PROJECT_NAME)
         _PathUtil.chdir(self.PROJECT_NAME)
 
-        online_version, local_version = PreSettingApkSyncUtil().download_newest_version_objects()
+        online_version, local_version = PreSettingApkSyncUtil(self._fds_access_key, self._fds_access_secret).download_newest_version_objects()
         LogUtil.log("online_version: " + str(online_version))
         LogUtil.log("local_version: " + str(local_version))
         LogUtil.log_end("download_or_upgrade_apk")
@@ -103,12 +102,12 @@ class PreSetter:
             if need_local_resource:
                 self.download_and_push_resources()
             else:
-                print str(self._package_name_arr) + " not need local resources"
+                print(str(self._package_name_arr) + " not need local resources")
 
             if need_local_image:
                 self.take_screenshots(100)
             else:
-                print str(self._package_name_arr) + " not need local images"
+                print(str(self._package_name_arr) + " not need local images")
         pass
 
     def download_and_push_resources(self):
@@ -123,14 +122,14 @@ class PreSetter:
             os.mkdir(self.resource_pc_path)
 
         files_num = len([x for (_, _, files) in os.walk(self.resource_pc_path) for x in files])
-        print "resource_files_num: " + str(files_num)
+        print("resource_files_num: " + str(files_num))
         if files_num != LOCAL_RESOURCES_NUMBER:
             os.system('rm -rf ' + self.resource_pc_path)
             os.mkdir(self.resource_pc_path)
-            LocalResourcesSyncUtil().download_objects_in_bucket_root(self.resource_pc_path)
+            LocalResourcesSyncUtil(self._fds_access_key, self._fds_access_secret).download_objects_in_bucket_root(self.resource_pc_path)
 
     def fix_resource_name(self):
-        unexpected_name_substring = [" ", "-", "\(", "\)", "（", "）", "《", "》", "\&"]
+        unexpected_name_substring = [" ", "-", "\(", "\)", "（", "）", "《", "》","\&"]
         target_substring = '_'
         for sub in unexpected_name_substring:
             ShellUtil.rename_sub_string(sub, target_substring, self.resource_pc_path, "*")
@@ -170,7 +169,7 @@ class PreSetter:
         pass
 
     def remove_accounts(self):
-        self.run_android_junit_runner(REMOVE_ACCOUNT)
+        self.run_android_junit_runner(CaseName.REMOVE_ACCOUNT)
         pass
 
     def get_result(self):
@@ -210,16 +209,16 @@ class PreSetter:
 
         command = "adb -s " + self._device_serial + " root"
         os.system(command)
-        print command
+        print(command)
 
         command = "mkdir -p " + self._log_out_path + "/com.mi.globalAutoTestTool.sanityCheck/cache"
-        print command
+        print(command)
         os.system(command)
 
         command = "adb -s " + self._device_serial + " pull /data/user/0/com.mi.globalAutoTestTool" \
                                                     ".sanityCheck/cache/ " \
                   + self._log_out_path + "/com.mi.globalAutoTestTool.sanityCheck/"
-        print command
+        print(command)
         os.system(command)
 
         LogUtil.log_end("move_result")
