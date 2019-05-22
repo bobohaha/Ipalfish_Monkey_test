@@ -47,6 +47,12 @@ class proxy:
     def do_script(self):
         LogUtil.log_start("doScript")
 
+        self.download_test_apk()
+        if self.get_result() is False:
+            self._rst_fail_msg = "下载待测Apk失败<BR>" \
+                                 "Download test apk error"
+            return
+
         self.install_test_apk()
         if self.get_result() is False:
             self._rst_fail_msg = "安装待测Apk失败<BR>" \
@@ -95,6 +101,17 @@ class proxy:
         self._PreSetter.run_specific_set()
         LogUtil.log_end("Presetting for Monkey Test")
 
+    def download_test_apk(self):
+        LogUtil.log_start("download_test_apk")
+        if self._MonkeyApkTester is None:
+            self._MonkeyApkTester = MonkeyApkTester(self._run._serial,
+                                                    self._run._out_path,
+                                                    self._run._param_dict,
+                                                    self.tag)
+        self._MonkeyApkTester.download_test_apk()
+        self._rst, self._jira_keys, self._kernel_issues, self._not_submitted_issues = self._MonkeyApkTester.get_rst()
+        LogUtil.log_start("download_test_apk")
+
     def install_test_apk(self):
         LogUtil.log_start("install_test_apk")
         if self._MonkeyApkTester is None:
@@ -102,7 +119,6 @@ class proxy:
                                                     self._run._out_path,
                                                     self._run._param_dict,
                                                     self.tag)
-        self._MonkeyApkTester.download_test_apk()
         self._MonkeyApkTester.check_and_sign_apk()
         self._MonkeyApkTester.install_downloaded_test_apk()
         self._rst, self._jira_keys, self._kernel_issues, self._not_submitted_issues = self._MonkeyApkTester.get_rst()

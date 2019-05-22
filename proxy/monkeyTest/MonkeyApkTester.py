@@ -120,7 +120,13 @@ class MonkeyApkTester:
         self._MonkeyApkSyncUtil. \
             download_objects_with_version(self._param_dict[param.TEST_APK_BUILD_VERSION])
         self.test_apk_file_name = self.get_file_name(".apk")
+        if self.test_apk_file_name == "":
+            self._rst = False
+            return
         self.test_apk_package = ShellUtil.get_apk_package_name(self.test_apk_file_name)
+        if self.test_apk_package == "":
+            self._rst = False
+            return
         LogUtil.log_end("download_test_apk")
 
     def uninstall_apk_in_device(self):
