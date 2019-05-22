@@ -11,6 +11,7 @@ from .preSetting import TestRegionLanguageBuilder
 from global_ci_util import LogUtil
 from monkeyReportGenerating.MonkeyReportGenerator import MonkeyReportGenerator
 from .config.account import *
+import version as version
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -23,7 +24,7 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.2.0.5")
+        LogUtil.log("Current code version: " + version.__version__)
         self.mongo_record_id_of_test_info = None
         self._run = run
         self._MonkeyApkTester = None

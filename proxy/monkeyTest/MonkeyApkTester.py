@@ -856,6 +856,8 @@ class MonkeyApkTester:
 
     def is_apk_in_device_belong_normal_key(self):
         apk_in_device_file_path = ADBUtil.get_apk_file_path(self._device_serial, self.test_apk_package)
+        if apk_in_device_file_path == "":
+            raise Exception("Get apk_in_device_file_path error")
         ADBUtil.root_and_remount(self._device_serial)
         output_apk = os.path.basename(apk_in_device_file_path)
         ADBUtil.pull(self._device_serial, apk_in_device_file_path, ".")
