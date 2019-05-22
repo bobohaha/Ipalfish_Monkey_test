@@ -883,7 +883,7 @@ class MonkeyApkTester:
         pass
 
     def add_issue_record(self, jira_key, bug, jira_status_change):
-        dao = GlobalCiDao.get_single_instance(True)
+        dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
         issue_count_all_loop = self.get_issue_count(bug.bug_signature_code)
         dao.add_issue_record(jira_key, "Monkey", bug.bug_package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_change, self._param_dict[TEST_APK_BUILD_VERSION])
         dao.release()
