@@ -23,7 +23,8 @@ class proxy:
 
     def __init__(self, run):
         LogUtil.log_start("__init__")
-        LogUtil.log("Code version: V4.2.0.4")
+        LogUtil.log("Code version: V4.2.0.5")
+        self.mongo_record_id_of_test_info = None
         self._run = run
         self._MonkeyApkTester = None
         self._PreSetter = None
@@ -125,6 +126,8 @@ class proxy:
                                                     self.tag)
         self._MonkeyApkTester.run_test()
         self._rst, self._jira_keys, self._kernel_issues, self._not_submitted_issues = self._MonkeyApkTester.get_rst()
+        if self._rst is False:
+            self._rst_fail_msg = "Monkey test failed"
         LogUtil.log("Monkey Test Result: " + str(self._rst))
         LogUtil.log_end("Monkey Test")
 
@@ -161,9 +164,18 @@ class proxy:
                                            test_type="Monkey",
                                            test_package_name=self._run._param_dict[param.PACKAGE_NAME],
                                            tag=self.tag):
+                self.mongo_record_id_of_test_info = BugDao.add_test_begin_record_to_mongo(tester=self.tester,
+                                                                                          script_type="Monkey",
+                                                                                          test_package_name=self._run._param_dict[param.PACKAGE_NAME],
+                                                                                          serial=self._run._serial,
+                                                                                          apk_build_id=self._run._param_dict[param.TEST_APK_BUILD_VERSION]
+                                                                                          )
                 return True
 
     def record_test_done(self):
         for _ in range(0, 3):
             if BugDao.add_test_done_to_use_info_record(self.tag):
+                BugDao.add_test_finish_record_to_mongo(record_id=self.mongo_record_id_of_test_info,
+                                                       test_result=self._rst,
+                                                       error_reason=self._rst_fail_msg)
                 return True

@@ -1,5 +1,7 @@
 import traceback
 from BugModel import *
+from global_ci_util.dao.global_ci_dao import GlobalCiDao
+import global_ci_util.dao.daoparam as daoparam
 
 
 class BugDao:
@@ -344,6 +346,13 @@ class BugDao:
         pass
 
     @staticmethod
+    def add_test_begin_record_to_mongo(tester, script_type, test_package_name, serial=None, apk_build_id=None, omni_task_id=0, omni_exec_id=0):
+        dao = GlobalCiDao.get_single_instance(True)
+        mongo_record_id = dao.save_test_begin(serial, omni_task_id, omni_exec_id, tester, script_type, test_package_name, apk_build_id)
+        dao.release()
+        return mongo_record_id
+
+    @staticmethod
     def add_test_done_to_use_info_record(tag):
         try:
             monkey_bug_db.connect(reuse_if_open=True)
@@ -356,6 +365,12 @@ class BugDao:
         finally:
             monkey_bug_db.manual_close()
         pass
+
+    @staticmethod
+    def add_test_finish_record_to_mongo(record_id=None, test_result=None, error_reason=None, **kwargs):
+        dao = GlobalCiDao.get_single_instance(True)
+        dao.save_test_finish(record_id, test_result, error_reason, **kwargs)
+        dao.release()
 
 
 # if __name__ == "__main__":
