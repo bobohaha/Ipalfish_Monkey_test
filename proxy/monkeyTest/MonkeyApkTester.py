@@ -516,10 +516,11 @@ class MonkeyApkTester:
                         if bug_jira is not None and bug_jira.jira_id != "":
                             jira_key = bug_jira.jira_id
                             is_closed = MonkeyJiraUtil().is_issue_closed(jira_key)
-                            if is_closed and not MonkeyJiraUtil().is_wont_fix_issue(jira_id_or_key=jira_key):
+                            is_wont_fix_issue = MonkeyJiraUtil().is_wont_fix_issue(jira_id_or_key=jira_key)
+                            if is_closed and not is_wont_fix_issue:
                                 MonkeyJiraUtil().change_issue_to_reopen(jira_key, STATUS_CLOSED)
                                 self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_REOPEN)
-                            elif is_closed and MonkeyJiraUtil().is_wont_fix_issue(jira_id_or_key=jira_key):
+                            elif is_closed and is_wont_fix_issue:
                                 self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_NOT_REOPEN)
                             else:
                                 self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_ALREADY_EXIST)

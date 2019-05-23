@@ -1,6 +1,7 @@
 import traceback
 from BugModel import *
 from global_ci_util.dao.global_ci_dao import GlobalCiDao
+import global_ci_util.dao.daoparam as daoparam
 from ..param import MONGO_DEBUG
 
 
@@ -369,7 +370,8 @@ class BugDao:
     @staticmethod
     def add_test_finish_record_to_mongo(record_id=None, test_result=None, error_reason=None, **kwargs):
         dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
-        dao.save_test_finish(record_id, test_result, error_reason, **kwargs)
+        test_result_str = daoparam.VALUE_TEST_RESULT_SUCCESS if test_result else daoparam.VALUE_TEST_RESULT_FAILED
+        dao.save_test_finish(record_id, test_result_str, error_reason, **kwargs)
         dao.release()
 
 
