@@ -1,5 +1,7 @@
 import traceback
 from BugModel import *
+from global_ci_util.dao.global_ci_dao import GlobalCiDao
+from ..param import MONGO_DEBUG
 
 
 class BugDao:
@@ -9,7 +11,8 @@ class BugDao:
     @staticmethod
     def save_bug_detail(bug_detail_dict, tag):
         print "save_bug_detail: ", str(bug_detail_dict), tag
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             _bug_summary = str(bug_detail_dict['summary'])
             if len(_bug_summary) > 150:
                 _bug_summary = _bug_summary[:150] + "..."
@@ -39,12 +42,15 @@ class BugDao:
                 print "save bug detail \"" + str(_bug) + "\" error: ", why
                 print traceback.format_exc()
                 return False, _bug
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def save_bug_tag(bug_signature_code, tag):
         print "save_bug_tag: ", bug_signature_code, tag
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             _bug_tag = BugTag(bug_signature_code=bug_signature_code,
                               tag=tag)
             _bug_tag_get_result = BugDao.get(BugTag,
@@ -61,12 +67,15 @@ class BugDao:
                 print "save bug tag \"" + str(_bug_tag) + "\" error: ", why
                 print traceback.format_exc()
                 return False, _bug_tag
+        finally:
+            monkey_bug_db.manual_close()
     pass
 
     @staticmethod
     def save_bug_rom(bug_signature_code, device_name, jira_miui_model, rom_version, tag):
         print "save_bug_rom: ", bug_signature_code, device_name, jira_miui_model, rom_version, tag
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             _bug_rom = BugRom(bug_signature_code=bug_signature_code,
                               device_name=device_name,
                               jira_miui_model=jira_miui_model,
@@ -88,12 +97,15 @@ class BugDao:
                 print "save bug rom \"" + str(_bug_rom) + "\" error: ", why
                 print traceback.format_exc()
                 return False, _bug_rom
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def save_bug_file(bug_signature_code, file_name, tag):
         print "save_bug_file: ", bug_signature_code, file_name, tag
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 _bug_file, save_result = BugFile.get_or_create(bug_signature_code=bug_signature_code,
                                                                file_name=file_name,
@@ -108,12 +120,15 @@ class BugDao:
                 print "bug file save failed: {{bug_signature_code: {0}, file_name: {1}, tag={2}}}, error: {3}".format(bug_signature_code, file_name, tag, why)
                 print traceback.format_exc()
                 return False, None
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def save_jira(jira_id, jira_summary, jira_assignee, tag):
         print "save_jira: ", jira_id, jira_summary, jira_assignee, tag
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             _jira_issue = Jiras(jira_id=jira_id,
                                 jira_summary=jira_summary,
                                 jira_assignee=jira_assignee,
@@ -131,12 +146,15 @@ class BugDao:
                 print "save jira \"" + str(_jira_issue) + "\" error: ", why
                 print traceback.format_exc()
                 return False, _jira_issue
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def save_bug_jira(bug_signature_code, jira_id, tag):
         print "save_bug_jira: ", bug_signature_code, jira_id, tag
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             _bug_jira = BugJira(bug_signature_code=bug_signature_code,
                                 jira_id=jira_id,
                                 tag=tag)
@@ -154,42 +172,56 @@ class BugDao:
                 print "save bug jira \"" + str(_bug_jira) + "\" error: ", why
                 print traceback.format_exc()
                 return False, _bug_jira
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def get_by_tag(table_name, tag):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 return BugDao.get(table_name, table_name.tag == tag)
             except DoesNotExist:
                 return None
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def get_jira_record_by_jira_key(jira_key):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 return BugDao.get(Jiras, Jiras.jira_id == jira_key).get()
             except (DoesNotExist, AttributeError):
                 return None
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def get_by_signature(table_name, bug_signature_code):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 return BugDao.get(table_name, table_name.bug_signature_code == bug_signature_code)
             except DoesNotExist:
                 return None
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def get_by_signature_tag(table_name, bug_signature_code, tag):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 return BugDao.get(table_name, table_name.bug_signature_code == bug_signature_code, table_name.tag == tag)
             except DoesNotExist:
                 return None
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @classmethod
@@ -212,33 +244,42 @@ class BugDao:
     @classmethod
     def update(cls, table_name, __data=None, **kwargs):
         print "update: ", table_name.__name__
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 table_name.update(__data, **kwargs)
                 return True
             except Exception, why:
                 print "{} update error: {}".format(table_name.__name__, why)
                 return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def update_tag_by_signature(table_name, bug_signature_code, tag):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 table_name.update(tag=tag).where(table_name.bug_signature_code == bug_signature_code).execute()
                 return True
             except (DoesNotExist, OperationalError):
                 return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def update_tag_by_issue_id(table_name, issue_id, tag):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 table_name.update(tag=tag).where(table_name.jira_id == issue_id).execute()
                 return True
             except (DoesNotExist, OperationalError):
                 return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
@@ -247,7 +288,8 @@ class BugDao:
 
     @classmethod
     def add_bug_record(cls, bug_signature_code, jira_key, tag):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             _bug_record = BugJira(bug_signature_code=bug_signature_code, jira_id=jira_key, tag=tag)
             try:
                 _bug_record.save()
@@ -255,32 +297,39 @@ class BugDao:
             except Exception, why:
                 print "add_bug_record error: ", why
                 return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @classmethod
     def add_jira_key_to_bug_record(cls, bug_signature_code, jira_key):
-        with monkey_bug_db:
-            try:
-                BugJira.update(jira_id=jira_key).where(BugJira.bug_signature_code == bug_signature_code).execute()
-                return True
-            except Exception, why:
-                print "add_jira_key_to_bug_record error: ", why
-                return False
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
+            BugJira.update(jira_id=jira_key).where(BugJira.bug_signature_code == bug_signature_code).execute()
+            return True
+        except Exception, why:
+            print "add_jira_key_to_bug_record error: ", why
+            return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @classmethod
     def delete_record_from_bug_jira_table(cls, bug_signature_code):
-        with monkey_bug_db:
-            try:
-                BugJira.delete().where(BugJira.bug_signature_code == bug_signature_code).execute()
-            except Exception, why:
-                print "delete_record_from_bug_jira_table error: ", why
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
+            BugJira.delete().where(BugJira.bug_signature_code == bug_signature_code).execute()
+        except Exception, why:
+            print "delete_record_from_bug_jira_table error: ", why
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
     def add_user_info_record(user_name, test_type, test_package_name, tag):
         print "add_user_info_record: [{},{},{},{}]".format(user_name, test_type, test_package_name, tag)
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             use_info = UseInfo(user_name=user_name,
                                test_type=test_type,
                                test_done=0,
@@ -292,18 +341,36 @@ class BugDao:
             except Exception, why:
                 print "add_user_info_record error: ", why
                 return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
 
     @staticmethod
+    def add_test_begin_record_to_mongo(tester, script_type, test_package_name, serial=None, apk_build_id=None, omni_task_id=0, omni_exec_id=0):
+        dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
+        mongo_record_id = dao.save_test_begin(serial, omni_task_id, omni_exec_id, tester, script_type, test_package_name, apk_build_id)
+        dao.release()
+        return mongo_record_id
+
+    @staticmethod
     def add_test_done_to_use_info_record(tag):
-        with monkey_bug_db:
+        try:
+            monkey_bug_db.connect(reuse_if_open=True)
             try:
                 UseInfo.update(test_done=1).where(UseInfo.tag == tag).execute()
                 return True
             except Exception, why:
                 print "add_test_done_to_use_info_record error: ", why
                 return False
+        finally:
+            monkey_bug_db.manual_close()
         pass
+
+    @staticmethod
+    def add_test_finish_record_to_mongo(record_id=None, test_result=None, error_reason=None, **kwargs):
+        dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
+        dao.save_test_finish(record_id, test_result, error_reason, **kwargs)
+        dao.release()
 
 
 # if __name__ == "__main__":

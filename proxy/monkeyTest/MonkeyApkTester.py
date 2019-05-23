@@ -4,7 +4,7 @@ import re
 import sys
 from time import sleep, time
 
-from proxy.param import MONKEY_SEED, PACKAGE_NAME, MONKEY_ROUND, MONKEY_PARAM, MONKEY_ROUND_MAXIMUM_TIME, ISSUE_WATCHERS, TESTER
+from proxy.param import *
 
 import zipfile
 
@@ -40,6 +40,8 @@ from global_ci_util.params.package_name import *
 from global_ci_util import PathUtil
 from global_ci_util import ShellUtil
 from ..config.account import *
+from global_ci_util.dao.global_ci_dao import GlobalCiDao
+import global_ci_util.dao.daoparam as daoparam
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -118,7 +120,13 @@ class MonkeyApkTester:
         self._MonkeyApkSyncUtil. \
             download_objects_with_version(self._param_dict[param.TEST_APK_BUILD_VERSION])
         self.test_apk_file_name = self.get_file_name(".apk")
+        if self.test_apk_file_name == "":
+            self._rst = False
+            return
         self.test_apk_package = ShellUtil.get_apk_package_name(self.test_apk_file_name)
+        if self.test_apk_package == "":
+            self._rst = False
+            return
         LogUtil.log_end("download_test_apk")
 
     def uninstall_apk_in_device(self):
@@ -458,7 +466,7 @@ class MonkeyApkTester:
             for bug in bugs:
                 if bug.bug_summary == "None" or bug.bug_detail == "None":
                     LogUtil.log("Issues with inadequate information: " + str(bug))
-                    self.save_to_not_submitted_issues(bug.bug_signature_code, bug.bug_time, bug.bug_time, bug.bug_summary, bug.bug_package_name)
+                    self.save_to_not_submitted_issues(bug.bug_signature_code, bug.bug_time, bug.bug_type, bug.bug_summary, bug.bug_package_name)
                     continue
                 if bug.bug_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
                     LogUtil.log("Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
@@ -478,6 +486,7 @@ class MonkeyApkTester:
                     if add_result:
                         try:
                             jira_key, jira_summary, jira_assignee = self.create_new_jira(bug, issue_detail)
+                            self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_NEW)
                         except Exception, why:
                             print "create new jira error: ", why
                             BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
@@ -506,9 +515,14 @@ class MonkeyApkTester:
 
                         if bug_jira is not None and bug_jira.jira_id != "":
                             jira_key = bug_jira.jira_id
-                            can_reopen, reopen_id = MonkeyJiraUtil().is_can_reopen_issue(jira_key)
-                            if can_reopen and not MonkeyJiraUtil().is_duplicate_issue(jira_id_or_key=jira_key):
-                                MonkeyJiraUtil().change_issue_to_reopen(jira_key, reopen_id)
+                            is_closed = MonkeyJiraUtil().is_issue_closed(jira_key)
+                            if is_closed and not MonkeyJiraUtil().is_wont_fix_issue(jira_id_or_key=jira_key):
+                                MonkeyJiraUtil().change_issue_to_reopen(jira_key, STATUS_CLOSED)
+                                self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_REOPEN)
+                            elif is_closed and MonkeyJiraUtil().is_wont_fix_issue(jira_id_or_key=jira_key):
+                                self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_NOT_REOPEN)
+                            else:
+                                self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_ALREADY_EXIST)
                             self.add_comment(jira_key, issue_detail)
                             break
 
@@ -717,9 +731,10 @@ class MonkeyApkTester:
         if self.result_monkey_issue_times not in self.results_monkey_time[self.current_index].keys():
             self.results_monkey_time[self.current_index][self.result_monkey_issue_times] = dict()
         if bug_signature_code not in self.results_monkey_time[self.current_index][self.result_monkey_issue_times].keys():
-            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code] = 1
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code] = set()
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
         else:
-            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code] += 1
+            self.results_monkey_time[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
         pass
 
     def get_time_year(self, bug_time):
@@ -757,7 +772,7 @@ class MonkeyApkTester:
             time_detail = JiraIssueTimeDetail().substitute(test_round=round_index,
                                                            monkey_start_time=self.results_monkey_time[round_index][self.result_monkey_start_time_field],
                                                            issue_first_time=self.results_monkey_time[round_index][self.result_monkey_issue_fst_time][bug.bug_signature_code],
-                                                           issue_times=str(self.results_monkey_time[round_index][self.result_monkey_issue_times][bug.bug_signature_code])
+                                                           issue_times=str(len(self.results_monkey_time[round_index][self.result_monkey_issue_times][bug.bug_signature_code]))
                                                            )
             monkey_time_detail += time_detail
         test_introduce = AUTO_TEST_INTRODUCTION if self._is_auto_test else RD_TEST_INTRODUCTION.format(tester=self._param_dict[TESTER].rstrip())
@@ -786,7 +801,7 @@ class MonkeyApkTester:
                 continue
             elif bug_signature_code not in self.results_monkey_time[monkey_round][self.result_monkey_issue_times].keys():
                 continue
-            bug_count += self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code]
+            bug_count += len(self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code])
 
         if bug_count == 1:
             return REPRODUCTIVITY_ONCE
@@ -837,21 +852,41 @@ class MonkeyApkTester:
 
         if bug_signature_code not in self._not_submitted_issues[self.current_index][self.result_monkey_issue_fst_time].keys():
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_fst_time][bug_signature_code] = bug_time
-            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] = 1
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] = set()
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_summary][bug_signature_code] = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
         else:
-            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] += 1
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
 
         pass
 
     def is_apk_in_device_belong_normal_key(self):
         apk_in_device_file_path = ADBUtil.get_apk_file_path(self._device_serial, self.test_apk_package)
+        if apk_in_device_file_path == "":
+            raise Exception("Get apk_in_device_file_path error")
         ADBUtil.root_and_remount(self._device_serial)
         output_apk = os.path.basename(apk_in_device_file_path)
         ADBUtil.pull(self._device_serial, apk_in_device_file_path, ".")
         output_apk_md5 = SignAPKUtil.get_md5_if_belong_normal_key(output_apk)
         return output_apk_md5 != ""
         pass
+
+    def get_issue_count(self, bug_signature_code):
+        bug_count = 0
+        for monkey_round in range(1, int(self._param_dict[MONKEY_ROUND]) + 1):
+            if self.result_monkey_issue_times not in self.results_monkey_time[monkey_round].keys():
+                continue
+            elif bug_signature_code not in self.results_monkey_time[monkey_round][self.result_monkey_issue_times].keys():
+                continue
+            bug_count += len(self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code])
+        return bug_count
+        pass
+
+    def add_issue_record(self, jira_key, bug, jira_status_change):
+        dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
+        issue_count_all_loop = self.get_issue_count(bug.bug_signature_code)
+        dao.add_issue_record(jira_key, "Monkey", bug.bug_package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_change, self._param_dict[TEST_APK_BUILD_VERSION])
+        dao.release()
 
 # if __name__ == "__main__":
 #     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"
