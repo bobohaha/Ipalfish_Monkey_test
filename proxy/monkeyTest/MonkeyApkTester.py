@@ -124,9 +124,9 @@ class MonkeyApkTester:
         LogUtil.log_start("download_test_apk")
         apk_package_name = self._param_dict[param.PACKAGE_NAME]
         apk_build_id = str(self._param_dict[param.TEST_APK_BUILD_VERSION])
-        is_new_ci = apk_build_id.startswith("CI_")
+        is_new_ci = apk_build_id.startswith(APK_BUILD_ID_NEW_CI_PREFIX)
         if is_new_ci:
-            apk_build_id = apk_build_id.replace("CI_", "")
+            apk_build_id = apk_build_id.replace(APK_BUILD_ID_NEW_CI_PREFIX, "")
             apk_package_name = self._param_dict[param.PACKAGE_NAME].split(",")[0]
 
         _PathUtil = PathUtil(__file__)

@@ -2,7 +2,7 @@ import traceback
 from BugModel import *
 from global_ci_util.dao.global_ci_dao import GlobalCiDao
 import global_ci_util.dao.daoparam as daoparam
-from ..param import MONGO_DEBUG
+from ..param import MONGO_DEBUG, APK_BUILD_ID_NEW_CI_PREFIX
 
 
 class BugDao:
@@ -349,7 +349,7 @@ class BugDao:
     @staticmethod
     def add_test_begin_record_to_mongo(tester, script_type, test_package_name, serial=None, apk_build_id=None, omni_task_id=0, omni_exec_id=0):
         dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
-        mongo_record_id = dao.save_test_begin(serial, omni_task_id, omni_exec_id, tester, script_type, test_package_name, apk_build_id)
+        mongo_record_id = dao.save_test_begin(serial, omni_task_id, omni_exec_id, tester, script_type, test_package_name, apk_build_id.replace(APK_BUILD_ID_NEW_CI_PREFIX, ""))
         dao.release()
         return mongo_record_id
 
