@@ -81,9 +81,6 @@ class MonkeyApkTester:
     bugs = {}
 
     MONKEY_CHECK_INTERVAL_SECOND = 60
-
-    _MonkeyApkSyncUtil = None
-
     _rst = None
     _kernel_issues = None
     _not_submitted_issues = None
@@ -92,15 +89,16 @@ class MonkeyApkTester:
         self._device_serial = serial
         self._log_out_path = out_path
         self._param_dict = param_dict
-        self._is_auto_test = True if self._param_dict[param.TEST_APK_BUILD_VERSION] != "None" else False
+        self._is_auto_test = True \
+            if self._param_dict[param.TEST_APK_BUILD_VERSION] is not None and self._param_dict[param.TEST_APK_BUILD_VERSION] not in ("None", "", " ") \
+            else False
         self._seed = None
         self._seed_specify = param_dict[MONKEY_SEED] \
-            if MONKEY_SEED in param_dict.keys() and param_dict[MONKEY_SEED] is not None and param_dict[MONKEY_SEED] != "None" and param_dict[MONKEY_SEED] != "" and param_dict[MONKEY_SEED] != " " \
+            if MONKEY_SEED in param_dict.keys() and param_dict[MONKEY_SEED] is not None and param_dict[MONKEY_SEED] not in ("None", "", " ") \
             else None
         self.clear_log_folder()
         self._device_name = PropUtil.get_mod_device_name(serial)
         self._rom_version = PropUtil.get_rom_version(serial)
-        self._MonkeyApkSyncUtil = MonkeyApkSyncUtil(self._param_dict[param.PACKAGE_NAME])
         self.tag = tag
         self.jira_keys = list()
         self.bug_seed = dict()
@@ -124,10 +122,16 @@ class MonkeyApkTester:
         if not self._is_auto_test:
             return
         LogUtil.log_start("download_test_apk")
+        apk_package_name = self._param_dict[param.PACKAGE_NAME]
+        apk_build_id = str(self._param_dict[param.TEST_APK_BUILD_VERSION])
+        is_new_ci = apk_build_id.startswith("CI_")
+        if is_new_ci:
+            apk_build_id = apk_build_id.replace("CI_", "")
+            apk_package_name = self._param_dict[param.PACKAGE_NAME].split(",")[0]
+
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
-        self._MonkeyApkSyncUtil. \
-            download_objects_with_version(self._param_dict[param.TEST_APK_BUILD_VERSION])
+        MonkeyApkSyncUtil(apk_package_name, is_new_ci).download_objects_with_version(apk_build_id)
         self.test_apk_file_name = self.get_file_name(".apk")
         if self.test_apk_file_name == "":
             self._rst = False
