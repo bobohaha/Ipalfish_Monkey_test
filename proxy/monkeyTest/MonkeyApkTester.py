@@ -111,6 +111,15 @@ class MonkeyApkTester:
         self.OUTPUT_ANR_PATH = self.OUTPUT_ANR_PATH.format(out_put=self._log_out_path)
         pass
 
+    def get_device_name(self):
+        mod_device_name = PropUtil.get_mod_device_name(self._device_serial)
+        if mod_device_name.endswith("_sprout"):
+            return mod_device_name
+        else:
+            device_name = PropUtil.get_device_name(self._device_serial)
+            return device_name + "_global"
+        pass
+
     def download_test_apk(self):
         if not self._is_auto_test:
             return
@@ -434,7 +443,7 @@ class MonkeyApkTester:
                 print BugDao.save_bug_file(bug.bug_signature_code, file_name, self.tag)
                 print BugDao.save_bug_rom(bug.bug_signature_code,
                                           self._device_name,
-                                          get_miui_model(self._device_name),
+                                          get_miui_model(self.get_device_name()),
                                           self._rom_version,
                                           self.tag)
         else:
@@ -550,7 +559,7 @@ class MonkeyApkTester:
         description = issue_detail
         jira_util = MonkeyJiraUtil()
         jira_util.jira_content.set_affects_versions(self._rom_version)
-        jira_util.jira_content.set_device_name(self._device_name)
+        jira_util.jira_content.set_device_name(self.get_device_name())
         component, assignee = get_component_assignee(bug.bug_package_name)
         print "assignee", assignee
         if component is not None:
