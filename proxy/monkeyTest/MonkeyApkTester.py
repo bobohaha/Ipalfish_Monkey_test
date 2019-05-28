@@ -564,6 +564,10 @@ class MonkeyApkTester:
         jira_util = MonkeyJiraUtil()
         jira_util.jira_content.set_affects_versions(self._rom_version)
         jira_util.jira_content.set_device_name(self.get_device_name())
+        if bug.bug_package_name in (PersonalAssistant, MIUIHome):
+            jira_util.jira_content.add_labels(PersonalAssistant)
+        else:
+            jira_util.jira_content.add_labels(bug.bug_package_name)
         component, assignee = get_component_assignee(bug.bug_package_name)
         print "assignee", assignee
         if component is not None:
@@ -880,9 +884,14 @@ class MonkeyApkTester:
             raise Exception("Get apk_in_device_file_path error")
         ADBUtil.root_and_remount(self._device_serial)
         output_apk = os.path.basename(apk_in_device_file_path)
-        ADBUtil.pull(self._device_serial, apk_in_device_file_path, ".")
-        output_apk_md5 = SignAPKUtil.get_md5_if_belong_normal_key(output_apk)
-        return output_apk_md5 != ""
+        try_time = 3
+        while try_time > 0:
+            try_time -= 1
+            ADBUtil.pull(self._device_serial, apk_in_device_file_path, os.path.join("./", output_apk))
+            if os.path.exists(output_apk):
+                output_apk_md5 = SignAPKUtil.get_md5_if_belong_normal_key(output_apk)
+                return output_apk_md5 != ""
+        return True
         pass
 
     def get_issue_count(self, bug_signature_code):
@@ -899,7 +908,8 @@ class MonkeyApkTester:
     def add_issue_record(self, jira_key, bug, jira_status_change):
         dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
         issue_count_all_loop = self.get_issue_count(bug.bug_signature_code)
-        dao.add_issue_record(jira_key, "Monkey", bug.bug_package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_change, self._param_dict[TEST_APK_BUILD_VERSION])
+        package_name = PersonalAssistant if bug.bug_package_name in (PersonalAssistant, MIUIHome) else bug.bug_package_name
+        dao.add_issue_record(jira_key, "Monkey", package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_change, self._param_dict[TEST_APK_BUILD_VERSION])
         dao.release()
 
 # if __name__ == "__main__":

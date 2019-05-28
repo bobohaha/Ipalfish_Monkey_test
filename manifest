@@ -37,4 +37,8 @@
 {"name":"TEST_APK_BUILD_VERSION",
 "value":"None",
 "description":"<font color=red>请保持默认</font>, CI专用参数 <BR> <font color=red>Please keep this default</font>",
+"necessary":"true"},
+{"name":"timeout",
+"value":172800,
+"description":"任务执行超时时间,单位(s) <BR> Timeout time for execution",
 "necessary":"true"}]

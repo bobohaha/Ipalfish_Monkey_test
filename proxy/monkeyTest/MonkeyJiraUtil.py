@@ -80,3 +80,10 @@ class MonkeyJiraUtil(JIRAUtil):
         @property
         def android_versions(self):
             return self.jira_content[ANDROID_VERSION_FIELD]
+
+        def add_labels(self, labels):
+            if not isinstance(labels, list):
+                self.jira_content[LABELS_FIELD].append(labels)
+            else:
+                for label in labels:
+                    self.jira_content[LABELS_FIELD].append(label)
