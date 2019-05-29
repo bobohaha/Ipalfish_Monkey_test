@@ -154,8 +154,7 @@ class MonkeyApkTester:
         if not self._is_auto_test:
             return
         LogUtil.log_start("retry_sign_apk")
-        if ADBUtil.check_package_exist(self._device_serial, self.test_apk_package) and not self.is_apk_in_device_belong_normal_key():
-            self.test_apk_file_name = SignAPKUtil.get_test_key_apk_if_belong_normal_key(self.test_apk_file_name)
+        self.test_apk_file_name = SignAPKUtil.need_resign_test_key(self._device_serial, self.test_apk_file_name, self.test_apk_package)
         LogUtil.log_end("retry_sign_apk")
 
     def install_downloaded_test_apk(self):
@@ -875,22 +874,6 @@ class MonkeyApkTester:
         else:
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
 
-        pass
-
-    def is_apk_in_device_belong_normal_key(self):
-        apk_in_device_file_path = ADBUtil.get_apk_file_path(self._device_serial, self.test_apk_package)
-        if apk_in_device_file_path == "":
-            raise Exception("Get apk_in_device_file_path error")
-        ADBUtil.root_and_remount(self._device_serial)
-        output_apk = os.path.basename(apk_in_device_file_path)
-        try_time = 3
-        while try_time > 0:
-            try_time -= 1
-            ADBUtil.pull(self._device_serial, apk_in_device_file_path, os.path.join("./", output_apk))
-            if os.path.exists(output_apk):
-                output_apk_md5 = SignAPKUtil.get_md5_if_belong_normal_key(output_apk)
-                return output_apk_md5 != ""
-        return True
         pass
 
     def get_issue_count(self, bug_signature_code):
