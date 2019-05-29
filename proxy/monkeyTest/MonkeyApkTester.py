@@ -477,13 +477,14 @@ class MonkeyApkTester:
         if bugs is not None:
             LogUtil.log("Having bugs...")
             for bug in bugs:
+                issue_package_name = self.get_issue_package_name(bug.bug_package_name)
                 if bug.bug_summary == "None" or bug.bug_detail == "None":
                     LogUtil.log("Issues with inadequate information: " + str(bug))
-                    self.save_to_not_submitted_issues(bug.bug_signature_code, bug.bug_time, bug.bug_type, bug.bug_summary, bug.bug_package_name)
+                    self.save_to_not_submitted_issues(bug.bug_signature_code, bug.bug_time, bug.bug_type, bug.bug_summary, issue_package_name)
                     continue
-                if bug.bug_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
+                if issue_package_name in (MintBrowser, Browser) and bug.bug_type == "ne" and bug.bug_summary.startswith("signal "):
                     LogUtil.log("Don't submit jira with kernel error on Browser or Mint Browser: " + bug.bug_summary)
-                    self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary, bug.bug_type, bug.bug_package_name)
+                    self.save_to_kernel_issues(bug.bug_signature_code, bug.bug_summary, bug.bug_type, issue_package_name)
                     continue
 
                 test_info = MonkeyReportGenerator.TestInformation(self._device_serial, self._param_dict)
@@ -564,11 +565,9 @@ class MonkeyApkTester:
         jira_util = MonkeyJiraUtil()
         jira_util.jira_content.set_affects_versions(self._rom_version)
         jira_util.jira_content.set_device_name(self.get_device_name())
-        if bug.bug_package_name in (PersonalAssistant, MIUIHome):
-            jira_util.jira_content.add_labels(PersonalAssistant)
-        else:
-            jira_util.jira_content.add_labels(bug.bug_package_name)
-        component, assignee = get_component_assignee(bug.bug_package_name)
+        issue_package_name = self.get_issue_package_name(bug.bug_package_name)
+        jira_util.jira_content.add_labels(issue_package_name)
+        component, assignee = get_component_assignee(issue_package_name)
         print "assignee", assignee
         if component is not None:
             jira_util.jira_content.set_component(component)
@@ -795,7 +794,7 @@ class MonkeyApkTester:
             monkey_time_detail += time_detail
         test_introduce = AUTO_TEST_INTRODUCTION if self._is_auto_test else RD_TEST_INTRODUCTION.format(tester=self._param_dict[TESTER].rstrip())
         description = JiraMonkeyDescriptionTemplate().substitute(test_introduce_title=test_introduce,
-                                                                 package=bug.bug_package_name,
+                                                                 package=self.get_issue_package_name(bug.bug_package_name),
                                                                  bug_type=bug.bug_type,
                                                                  device_names=self._device_name,
                                                                  rom_versions=self._rom_version,
@@ -908,9 +907,16 @@ class MonkeyApkTester:
     def add_issue_record(self, jira_key, bug, jira_status_change):
         dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
         issue_count_all_loop = self.get_issue_count(bug.bug_signature_code)
-        package_name = PersonalAssistant if bug.bug_package_name in (PersonalAssistant, MIUIHome) else bug.bug_package_name
+        package_name = self.get_issue_package_name(bug.bug_package_name)
         dao.add_issue_record(jira_key, "Monkey", package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_change, self._param_dict[TEST_APK_BUILD_VERSION])
         dao.release()
+
+    @classmethod
+    def get_issue_package_name(cls, bug_package_name):
+        package_name = PersonalAssistant if bug_package_name in (PersonalAssistant, MIUIHome) else bug_package_name
+        if ":" in package_name:
+            package_name = package_name.split(":")[0]
+        return package_name
 
 # if __name__ == "__main__":
 #     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"
