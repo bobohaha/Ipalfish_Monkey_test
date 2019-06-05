@@ -571,7 +571,11 @@ class MonkeyApkTester:
         if component is not None:
             jira_util.jira_content.set_component(component)
         if assignee is None:
-            _assignee = self._param_dict[TESTER].rstrip()
+            if self._is_auto_test:
+                _assignee = ISSUE_DEFAULT_OWNER
+            else:
+                _assignee = self._param_dict[TESTER].rstrip()
+
             if _assignee == "":
                 _assignee = ISSUE_DEFAULT_OWNER
             jira_util.jira_content.set_assignee(_assignee)
