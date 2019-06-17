@@ -8,7 +8,7 @@
 "necessary":"true"},
 {"name":"MONKEY_ROUND_MAXIMUM_TIME",
 "value":"720",
-"description":"Monkey每轮分钟数 <BR> This is a int value that specify duration(minutes) per loop, and the total duration is loops * duration per loop",
+"description":"Monkey每轮分钟数, <font color=red>总执行时长必须少于timeout时间</font> <BR> This is a int value that specify duration(minutes) per loop, and the total duration is loops * duration per loop, <font color=red>total duration must less than timeout</font>",
 "necessary":"true"},
 {"name":"MONKEY_SEED",
 "value":"None",
@@ -40,5 +40,5 @@
 "necessary":"true"},
 {"name":"timeout",
 "value":172800,
-"description":"任务执行超时时间,单位(s) <BR> Timeout time for execution",
+"description":"任务执行超时时间,单位(s)， <font color=red>建议设定为总执行时长的两倍时间</font> <BR> Timeout time for execution, <font color=red>it suggested to set to twice of execution time</font>",
 "necessary":"true"}]
