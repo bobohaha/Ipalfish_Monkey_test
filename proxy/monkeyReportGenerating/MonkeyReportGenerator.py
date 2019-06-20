@@ -44,7 +44,7 @@ class MonkeyReportGenerator(object):
             fail_reason_msg_item.append(Data(self.test_result.fail_msg))
 
         send_report_item = self.report_content.byid('send-report')
-        send_report_str = "true" if self.test_result.rst is False and no_fail_msg else "false"
+        send_report_str = "true" if self.test_result.rst is False and self.test_result.fail_msg == "Monkey test failed" else "false"
         if send_report_item != None:
             send_report_item.attr['value'] = send_report_str
         LogUtil.log_end("process_test_result")
