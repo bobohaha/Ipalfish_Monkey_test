@@ -528,7 +528,7 @@ class MonkeyApkTester:
 
                         if bug_jira is not None and bug_jira.jira_id != "":
                             jira_key = bug_jira.jira_id
-                            jira_info = MonkeyJiraUtil().get_issue_information(jira_id_or_key=jira_key)
+                            rst, jira_info = MonkeyJiraUtil().get_issue_information(jira_id_or_key=jira_key)
                             is_need_reopen = MonkeyJiraUtil().is_need_reopen(issue_object=jira_info)
                             is_all_linked_issue_solved = MonkeyJiraUtil().is_all_linked_issue_solved(issue_object=jira_info)
                             current_status = jira_info.status_name
