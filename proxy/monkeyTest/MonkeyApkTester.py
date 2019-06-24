@@ -499,12 +499,12 @@ class MonkeyApkTester:
                     if add_result:
                         try:
                             jira_key, jira_summary, jira_assignee = self.create_new_jira(bug, issue_detail)
-                            self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_NEW)
                         except Exception, why:
                             print "create new jira error: ", why
                             BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
 
                         if "error_jira_key" not in jira_key:
+                            self.add_issue_record(jira_key, bug, jira_status_old="", jira_status_new=STATUS_OPEN)
                             if not BugDao.add_jira_key_to_bug_record(bug.bug_signature_code, jira_key):
                                 BugDao.delete_record_from_bug_jira_table(bug.bug_signature_code)
                             BugDao.save_jira(jira_key, jira_summary, jira_assignee, self.tag)
@@ -528,15 +528,15 @@ class MonkeyApkTester:
 
                         if bug_jira is not None and bug_jira.jira_id != "":
                             jira_key = bug_jira.jira_id
-                            is_closed = MonkeyJiraUtil().is_issue_closed(jira_key)
-                            is_wont_fix_issue = MonkeyJiraUtil().is_wont_fix_issue(jira_id_or_key=jira_key)
-                            if is_closed and not is_wont_fix_issue:
-                                MonkeyJiraUtil().change_issue_to_reopen(jira_key, STATUS_CLOSED)
-                                self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_REOPEN)
-                            elif is_closed and is_wont_fix_issue:
-                                self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_NOT_REOPEN)
+                            rst, jira_info = MonkeyJiraUtil().get_issue_information(jira_id_or_key=jira_key)
+                            is_need_reopen = MonkeyJiraUtil().is_need_reopen(issue_object=jira_info)
+                            is_all_linked_issue_solved = MonkeyJiraUtil().is_all_linked_issue_solved(issue_object=jira_info)
+                            current_status = jira_info.status_name
+                            if is_need_reopen and is_all_linked_issue_solved:
+                                MonkeyJiraUtil().change_issue_to_reopen(jira_key, current_status=current_status)
+                                self.add_issue_record(jira_key, bug, current_status, STATUS_REOPENED)
                             else:
-                                self.add_issue_record(jira_key, bug, daoparam.VALUE_JIRA_STATUS_CHANGE_ALREADY_EXIST)
+                                self.add_issue_record(jira_key, bug, current_status, "")
                             self.add_comment(jira_key, issue_detail)
                             break
 
@@ -891,11 +891,11 @@ class MonkeyApkTester:
         return bug_count
         pass
 
-    def add_issue_record(self, jira_key, bug, jira_status_change):
+    def add_issue_record(self, jira_key, bug, jira_status_old, jira_status_new):
         dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
         issue_count_all_loop = self.get_issue_count(bug.bug_signature_code)
         package_name = self.get_issue_package_name(bug.bug_package_name)
-        dao.add_issue_record(jira_key, "Monkey", package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_change, self._param_dict[TEST_APK_BUILD_VERSION])
+        dao.add_issue_record_new(jira_key, "Monkey", package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_old, jira_status_new, self._param_dict[TEST_APK_BUILD_VERSION])
         dao.release()
 
     @classmethod
