@@ -15,7 +15,6 @@ class MonkeyJiraUtil(JIRAUtil):
     class JiraContent:
         def __init__(self):
             self.jira_content = {
-                PROJECT_FIELD: PROJECT_MONKEY,
                 ISSUE_TYPE_FIELD: ISSUE_TYPE_MONKEY,
                 PRIORITY_FIELD: PRIORITY_MONKEY,
                 BUG_TYPE_FIELD: BUG_TYPE_MONKEY,
@@ -24,6 +23,9 @@ class MonkeyJiraUtil(JIRAUtil):
                 LABELS_FIELD: [LABEL_GLOBAL_DEFAULT, LABEL_GLOBAL_DEV_CI, LABEL_GLOBAL_AUTO_MONKEY]
             }
             pass
+
+        def set_project(self, project):
+            self.jira_content[PROJECT_FIELD] = project
 
         def set_component(self, component):
             self.jira_content[COMPONENTS_FIELD] = component
