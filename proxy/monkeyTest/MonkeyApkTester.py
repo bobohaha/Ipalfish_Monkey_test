@@ -567,7 +567,10 @@ class MonkeyApkTester:
             jira_util.jira_content.set_project(PROJECT_MINT_BROWSER)
         else:
             jira_util.jira_content.set_project(PROJECT_MIUI)
-        jira_util.jira_content.set_affects_versions(self._rom_version)
+
+        if issue_package_name != MintBrowser:
+            jira_util.jira_content.set_affects_versions(self._rom_version)
+
         jira_util.jira_content.set_device_name(self.get_device_name())
         jira_util.jira_content.add_labels(issue_package_name)
         component, assignee = get_component_assignee(issue_package_name)
