@@ -1,5 +1,6 @@
 # coding=utf-8
 import datetime
+import os
 import re
 import sys
 from time import sleep, time
@@ -25,7 +26,8 @@ from proxy.monkeyReportGenerating.MonkeyReportGenerator import MonkeyReportGener
 try:
     import xlsxwriter
 except ImportError:
-    os.system("pip install XlsxWriter")
+    from global_ci_util.dependencies_util import check_and_install_package
+    check_and_install_package('XlsxWriter')
     import xlsxwriter
 
 from proxy import param
@@ -41,7 +43,6 @@ from global_ci_util import PathUtil
 from global_ci_util import ShellUtil
 from ..config.account import *
 from global_ci_util.dao.global_ci_dao import GlobalCiDao
-import global_ci_util.dao.daoparam as daoparam
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
