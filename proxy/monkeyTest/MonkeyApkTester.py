@@ -286,6 +286,8 @@ class MonkeyApkTester:
                 break
             LogUtil.log("hold_for_monkey_run_time(): left {} minutes...".format(str(left_seconds / 60)))
             sleep(self.MONKEY_CHECK_INTERVAL_SECOND)
+            # Set to volume down to prevent noise in lab.
+            self.set_volume_down()
             if ADBUtil.get_process_id_by_name(self._device_serial, "monkey") is None:
                 self.run_monkey_in_background()
 
@@ -912,6 +914,14 @@ class MonkeyApkTester:
         if ":" in package_name:
             package_name = package_name.split(":")[0]
         return package_name
+
+    def set_volume_down(self):
+        # Set media (3) volume down to 1 (minimum volume)
+        std_out, std_err = ADBUtil.execute_shell(self._device_serial, 'media volume --stream 3 --get', output=True)
+        import re
+        find_volume = re.search('volume is (\\d+) ', std_out)
+        if find_volume is not None and int(find_volume.group(1)) > 1:
+            ADBUtil.execute_shell(self._device_serial, 'media volume --stream 3 --set 1', output=False)
 
 # if __name__ == "__main__":
 #     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"
