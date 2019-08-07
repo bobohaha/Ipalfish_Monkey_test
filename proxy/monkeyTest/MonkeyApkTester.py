@@ -281,8 +281,8 @@ class MonkeyApkTester:
         LogUtil.log("hold_for_monkey_run_time(): monkey_round_maximum_time_min is " + monkey_round_maximum_time_min)
 
         try:
-            android_sdk = int(ADBUtil.get_prop('ro.build.version.sdk'))
-        except ValueError:
+            android_sdk = int(ADBUtil.get_prop(self._device_serial, 'ro.build.version.sdk'))
+        except Exception:
             android_sdk = 24
         while True:
             left_seconds = start_time + monkey_max_time - time()
