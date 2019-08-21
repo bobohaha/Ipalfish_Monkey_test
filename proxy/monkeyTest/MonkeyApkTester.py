@@ -919,8 +919,9 @@ class MonkeyApkTester:
             package_name = package_name.split(":")[0]
         return package_name
 
-    def set_volume_down(self, android_version=24):
-        if android_version <= 23:
+    def set_volume_down(self, android_version=26):
+        if android_version <= 25:
+            # call audio method 3 and set media volume (3) down to 1 (minimum volume)
             ADBUtil.execute_shell(self._device_serial, 'service call audio 3 i32 3 i32 1')
         else:
             # Set media (3) volume down to 1 (minimum volume)
