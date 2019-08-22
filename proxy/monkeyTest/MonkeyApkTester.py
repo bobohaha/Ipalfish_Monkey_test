@@ -43,6 +43,7 @@ from global_ci_util import PathUtil
 from global_ci_util import ShellUtil
 from ..config.account import *
 from global_ci_util.dao.global_ci_dao import GlobalCiDao
+from global_ci_util.decorators import function_log
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -931,8 +932,80 @@ class MonkeyApkTester:
             if find_volume is not None and int(find_volume.group(1)) > 1:
                 ADBUtil.execute_shell(self._device_serial, 'media volume --stream 3 --set 1', output=False)
 
-# if __name__ == "__main__":
-#     file_name = "/Users/may/Downloads/riva_8.12.21_261152.zip"
-#     package = "com.mi.android.globallauncher"
-#     monkey = MonkeyApkTester()
-#     monkey.analysis_bug_result(file_name, package)
+    @function_log
+    def grant_permissions(self):
+        # dangerous permission usually requires user approves to be granted, hence using adb granting for tests purposes
+        dangerous_permission = ['android.permission.READ_CALENDAR',
+                                'android.permission.WRITE_CALENDAR',
+                                'android.permission.CAMERA',
+                                'android.permission.READ_CONTACTS',
+                                'android.permission.WRITE_CONTACTS',
+                                'android.permission.GET_ACCOUNTS',
+                                'android.permission.ACCESS_FINE_LOCATION',
+                                'android.permission.ACCESS_COARSE_LOCATION',
+                                'android.permission.RECORD_AUDIO',
+                                'android.permission.READ_PHONE_STATE',
+                                'android.permission.CALL_PHONE',
+                                'android.permission.READ_CALL_LOG',
+                                'android.permission.WRITE_CALL_LOG',
+                                'android.permission.ADD_VOICEMAIL',
+                                'android.permission.USE_SIP',
+                                'android.permission.PROCESS_OUTGOING_CALLS',
+                                'android.permission.BODY_SENSORS',
+                                'android.permission.SEND_SMS',
+                                'android.permission.RECEIVE_SMS',
+                                'android.permission.READ_SMS',
+                                'android.permission.RECEIVE_WAP_PUSH',
+                                'android.permission.RECEIVE_MMS',
+                                'android.permission.READ_EXTERNAL_STORAGE',
+                                'android.permission.WRITE_EXTERNAL_STORAGE']
+
+        requested_permission_list = self.dumpsys_for_permission_list()
+
+        if "package_not_found" in requested_permission_list:
+            print ("granting permission failed due to package_not_found")
+            return False
+        elif "None output" in requested_permission_list:
+            print ("granting permission failed due to None output")
+            return False
+
+        for permission in requested_permission_list:
+            if permission in dangerous_permission:
+                cmd_str = 'pm grant {} {}'.format(self._param_dict[PACKAGE_NAME], permission)
+                ret_cmd, ret_err = ADBUtil.execute_shell("8533f5a", cmd_str, output=True)
+                if "Security exception" in ret_err:
+                    print("System app don't required permission grant, aborting ")
+                    break
+                print(permission + " granted")
+        return True
+
+    @function_log
+    def dumpsys_for_permission_list(self):
+        requested_permission_list = []
+        cmd_str = 'dumpsys package {}'.format(self._param_dict[PACKAGE_NAME])
+        command_output, command_err = ADBUtil.execute_shell(self._device_serial, cmd_str, True)
+
+        processing_list = command_output.split('\n')
+
+        if command_output is None or len(command_output) == 0:
+            requested_permission_list.append("None output")
+            return requested_permission_list
+
+        start_perm_section = False
+        end_perm_section = False
+        for l in processing_list:
+            if "requested permissions:" in l:
+                start_perm_section = True
+                continue
+            elif 'install permissions:' in l:
+                end_perm_section = True
+            elif 'Unable to find package:' in l:
+                requested_permission_list.append('package_not_found')
+                break
+
+            if start_perm_section and not end_perm_section:
+                requested_permission_list.append(l.strip())
+            elif start_perm_section and end_perm_section:
+                break
+
+        return requested_permission_list
