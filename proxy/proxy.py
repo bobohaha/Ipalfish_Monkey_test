@@ -65,7 +65,7 @@ class proxy:
                                  "Specified package name invalid"
             return
 
-        self.grant_permission()
+        self.granting_package_permission()
         self.pre_setting()
         if self.get_result() is False:
             self._rst_fail_msg = "设置预置条件失败<BR>" \
@@ -142,7 +142,7 @@ class proxy:
                                                     self._run._out_path,
                                                     self._run._param_dict,
                                                     self.tag)
-
+        self._MonkeyApkTester.grant_permissions()
         LogUtil.log_end("granting_package_permission")
 
     def run_monkey_test(self):

@@ -972,7 +972,7 @@ class MonkeyApkTester:
         for permission in requested_permission_list:
             if permission in dangerous_permission:
                 cmd_str = 'pm grant {} {}'.format(self._param_dict[PACKAGE_NAME], permission)
-                ret_cmd, ret_err = ADBUtil.execute_shell("8533f5a", cmd_str, output=True)
+                ret_cmd, ret_err = ADBUtil.execute_shell(self._device_serial, cmd_str, output=True)
                 if "Security exception" in ret_err:
                     print("System app don't required permission grant, aborting ")
                     break
@@ -983,7 +983,7 @@ class MonkeyApkTester:
     def dumpsys_for_permission_list(self):
         requested_permission_list = []
         cmd_str = 'dumpsys package {}'.format(self._param_dict[PACKAGE_NAME])
-        command_output, command_err = ADBUtil.execute_shell(self._device_serial, cmd_str, True)
+        command_output, command_err = ADBUtil.execute_shell(self._device_serial, cmd_str, output=True)
 
         processing_list = command_output.split('\n')
 
