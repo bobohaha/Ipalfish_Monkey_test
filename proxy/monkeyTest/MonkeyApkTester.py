@@ -973,7 +973,7 @@ class MonkeyApkTester:
             if permission in dangerous_permission:
                 cmd_str = 'pm grant {} {}'.format(self._param_dict[PACKAGE_NAME], permission)
                 ret_cmd, ret_err = ADBUtil.execute_shell(self._device_serial, cmd_str, output=True)
-                if "Security exception" in ret_err:
+                if "Security exception: Cannot grant system fixed permission" in ret_err:
                     print("System app don't required permission grant, aborting ")
                     break
                 print(permission + " granted")
