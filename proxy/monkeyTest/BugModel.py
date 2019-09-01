@@ -9,12 +9,12 @@ except ImportError:
 
 try:
     monkey_bug_db = PooledMySQLDatabase('monkey_bug_db_test', user='root', password='100%SanityXm',
-                                        host="10.232.52.151", port=3306)
+                                        host="10.221.128.7", port=3306)
 except ImproperlyConfigured:
     from global_ci_util.dependencies_util import check_and_install_package
     check_and_install_package("PyMySQL")
     monkey_bug_db = PooledMySQLDatabase('monkey_bug_db_test', user='root', password='100%SanityXm',
-                                        host="10.232.52.151", port=3306)
+                                        host="10.221.128.7", port=3306)
 
 
 class BaseModel(Model):
