@@ -45,7 +45,7 @@ class PreSetter:
         self.rst = ADBUtil.try_install(self._device_serial, "./app-debug.apk")
         if self.rst:
             self.rst = ADBUtil.try_install(self._device_serial, "./app-debug-androidTest.apk")
-        ADBUtil.execute_shell(self._serial,
+        ADBUtil.execute_shell(self._device_serial,
                               'appops set com.mi.globalAutoTestTool.sanityCheck 10021 allow',
                               output=True)
         LogUtil.log_end("install_downloaded_apk")
