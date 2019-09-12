@@ -1,4 +1,4 @@
-from proxy.param import PACKAGE_NAME, TEST_APK_BUILD_VERSION, MONKEY_PARAM, MONKEY_ROUND, MONKEY_ROUND_MAXIMUM_TIME
+from proxy.param import PACKAGE_NAME, CI_TEST_RECORD_ID, MONKEY_PARAM, MONKEY_ROUND, MONKEY_ROUND_MAXIMUM_TIME
 from global_ci_util import PropUtil
 from global_ci_util import ADBUtil
 from proxy.monkeyTest.BugDao import BugDao
@@ -6,6 +6,7 @@ from global_ci_util.report.ehp_pyhon2 import *
 from global_ci_util.params.jira_param import JIRA_ISSUE_LINK
 from global_ci_util import PathUtil
 from global_ci_util import LogUtil
+from global_ci_util.ci_quality.api_helper import *
 from proxy.monkeyTest.BugModel import Jiras
 
 import sys
@@ -209,7 +210,10 @@ class MonkeyReportGenerator(object):
         def __init__(self, serial, param_dict):
             self.package_name = param_dict[PACKAGE_NAME]
             self.app_versions = str(MonkeyReportGenerator.AppVersions(serial, self.package_name.split(',')))
-            self.jenkins_build_num = param_dict[TEST_APK_BUILD_VERSION]
+            apk_build_id = None
+            if param_dict[CI_TEST_RECORD_ID] is not None and param_dict[CI_TEST_RECORD_ID] != "":
+                apk_build_id = CIQualityApiHelper().get_test_record(param_dict[CI_TEST_RECORD_ID]).apk_ci_id
+            self.jenkins_build_num = apk_build_id
             self.device_name = PropUtil.get_mod_device_name(serial)
             self.rom_version = PropUtil.get_rom_version(serial)
             self.android_version = PropUtil.get_android_version(serial)

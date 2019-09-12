@@ -34,7 +34,7 @@
 "value":"None",
 "description":"需要关注问题的人员的邮箱，不需要带邮箱后缀，多人员以','分隔 <BR> This is a comma separated list of email address without suffix, which will be added to issue watcher in jira",
 "necessary": "false"},
-{"name":"TEST_APK_BUILD_VERSION",
+{"name":"CI_TEST_RECORD_ID",
 "value":"None",
 "description":"<font color=red>请保持默认</font>, CI专用参数 <BR> <font color=red>Please keep this default</font>",
 "necessary":"true"},

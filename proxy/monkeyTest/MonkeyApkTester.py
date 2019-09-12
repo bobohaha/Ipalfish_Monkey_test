@@ -1,7 +1,6 @@
 # coding=utf-8
 import datetime
 import os
-import re
 import sys
 from time import sleep, time
 
@@ -17,6 +16,8 @@ except ImportError:
     compression = zipfile.ZIP_STORED
 
 from global_ci_util import BasUtil
+from global_ci_util.ci_quality.api_helper import *
+from global_ci_util.ci_quality.api_param import *
 from BugDao import BugDao
 from BugModel import *
 from MonkeyJiraTemplates import *
@@ -27,6 +28,7 @@ try:
     import xlsxwriter
 except ImportError:
     from global_ci_util.dependencies_util import check_and_install_package
+
     check_and_install_package('XlsxWriter')
     import xlsxwriter
 
@@ -86,14 +88,20 @@ class MonkeyApkTester:
     _rst = None
     _kernel_issues = None
     _not_submitted_issues = None
+    _test_record_id = None
+    _other_issue = set()
+    _apk_package_name = None
+    _apk_build_id = None
 
     def __init__(self, serial, out_path, param_dict, tag):
         self._device_serial = serial
         self._log_out_path = out_path
         self._param_dict = param_dict
+        self._test_record_id = self._param_dict[param.CI_TEST_RECORD_ID]
         self._is_auto_test = True \
-            if self._param_dict[param.TEST_APK_BUILD_VERSION] is not None and self._param_dict[param.TEST_APK_BUILD_VERSION] not in ("None", "", " ") \
+            if self._test_record_id is not None and self._test_record_id not in ("None", "", " ") \
             else False
+        self.ci_helper = CIQualityApiHelper()
         self._seed = None
         self._seed_specify = param_dict[MONKEY_SEED] \
             if MONKEY_SEED in param_dict.keys() and param_dict[MONKEY_SEED] is not None and param_dict[MONKEY_SEED] not in ("None", "", " ") \
@@ -109,7 +117,35 @@ class MonkeyApkTester:
         self.RESULT_PATH = self.RESULT_PATH.format(out_put=self._log_out_path)
         self.OUTPUT_CRASH_PATH = self.OUTPUT_CRASH_PATH.format(out_put=self._log_out_path)
         self.OUTPUT_ANR_PATH = self.OUTPUT_ANR_PATH.format(out_put=self._log_out_path)
+
+        self.init_apk_info()
         pass
+
+    def test_start(self):
+        LogUtil.log_start("test_start")
+        try:
+            test_record = TestRecord()
+            test_record.test_status = TEST_STATUS_TESTING
+            self.ci_helper.update_test_record(test_record=test_record, test_record_id=self._test_record_id)
+        except Exception, why:
+            LogUtil.log(">> =======test_start ERROR===========")
+            LogUtil.log(why)
+            LogUtil.log(">> =======test_start ERROR Done===========")
+        LogUtil.log_end("test_start")
+
+    def test_end(self, test_status):
+        LogUtil.log_start("test_end")
+        try:
+            test_record = TestRecord()
+            test_record.test_status = test_status
+            test_record.jira_list = ','.join(self.jira_keys) if self.jira_keys else ''
+            test_record.other_issues_description = '\n'.join(self._other_issue) if self._other_issue else ''
+            self.ci_helper.update_test_record(test_record=test_record, test_record_id=self._test_record_id)
+        except Exception, why:
+            LogUtil.log(">> =======test_start ERROR===========")
+            LogUtil.log(why)
+            LogUtil.log(">> =======test_start ERROR Done===========")
+        LogUtil.log_end("test_end")
 
     def get_device_name(self):
         mod_device_name = PropUtil.get_mod_device_name(self._device_serial)
@@ -120,20 +156,18 @@ class MonkeyApkTester:
             return device_name + "_global"
         pass
 
+    def init_apk_info(self):
+        test_record = self.ci_helper.get_test_record(self._test_record_id)
+        self._apk_package_name = test_record.package_name
+        self._apk_build_id = test_record.apk_ci_id
+
     def download_test_apk(self):
         if not self._is_auto_test:
             return
         LogUtil.log_start("download_test_apk")
-        apk_package_name = self._param_dict[param.PACKAGE_NAME]
-        apk_build_id = str(self._param_dict[param.TEST_APK_BUILD_VERSION])
-        is_new_ci = apk_build_id.startswith(APK_BUILD_ID_NEW_CI_PREFIX)
-        if is_new_ci:
-            apk_build_id = apk_build_id.replace(APK_BUILD_ID_NEW_CI_PREFIX, "")
-            apk_package_name = self._param_dict[param.PACKAGE_NAME].split(",")[0]
-
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
-        MonkeyApkSyncUtil(apk_package_name, is_new_ci).download_objects_with_version(apk_build_id)
+        MonkeyApkSyncUtil(self._apk_package_name, True).download_objects_with_version(self._apk_build_id)
         self.test_apk_file_name = self.get_file_name(".apk")
         if self.test_apk_file_name == "":
             self._rst = False
@@ -870,7 +904,10 @@ class MonkeyApkTester:
                 # Save issue times
                 self._kernel_issues[monkey_round][self.result_monkey_issue_times][bug_signature_code] = self.results_monkey_time[monkey_round][self.result_monkey_issue_times][bug_signature_code]
                 # Save issue summary
-                self._kernel_issues[monkey_round][self.result_monkey_issue_summary][bug_signature_code] = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
+                issue_summary = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
+                self._kernel_issues[monkey_round][self.result_monkey_issue_summary][bug_signature_code] = issue_summary
+                self._other_issue.add(issue_summary)
+
         pass
 
     def save_to_not_submitted_issues(self, bug_signature_code, bug_time, bug_type, bug_summary, bug_pkg_name):
@@ -889,7 +926,9 @@ class MonkeyApkTester:
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_fst_time][bug_signature_code] = bug_time
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code] = set()
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
-            self._not_submitted_issues[self.current_index][self.result_monkey_issue_summary][bug_signature_code] = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
+            issue_summary = "[ {} ][ {} ]{}".format(bug_pkg_name, bug_type, bug_summary)
+            self._not_submitted_issues[self.current_index][self.result_monkey_issue_summary][bug_signature_code] = issue_summary
+            self._other_issue.add(issue_summary)
         else:
             self._not_submitted_issues[self.current_index][self.result_monkey_issue_times][bug_signature_code].add(bug_time)
 
@@ -910,7 +949,7 @@ class MonkeyApkTester:
         dao = GlobalCiDao.get_single_instance(MONGO_DEBUG)
         issue_count_all_loop = self.get_issue_count(bug.bug_signature_code)
         package_name = self.get_issue_package_name(bug.bug_package_name)
-        dao.add_issue_record_new(jira_key, "Monkey", package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_old, jira_status_new, self._param_dict[TEST_APK_BUILD_VERSION])
+        dao.add_issue_record_new(jira_key, "Monkey", package_name, self._param_dict[TESTER].rstrip(), issue_count_all_loop, jira_status_old, jira_status_new, self._apk_build_id)
         dao.release()
 
     @classmethod
@@ -1009,3 +1048,16 @@ class MonkeyApkTester:
                 break
 
         return requested_permission_list
+
+    def record_test_info_to_mongo(self):
+        if BugDao.add_user_info_record(user_name=self._param_dict[TESTER].rstrip(),
+                                       test_type="Monkey",
+                                       test_package_name=self._param_dict[param.PACKAGE_NAME],
+                                       tag=self.tag):
+            return BugDao.add_test_begin_record_to_mongo(tester=self._param_dict[TESTER].rstrip(),
+                                                         script_type="Monkey",
+                                                         test_package_name=self._param_dict[param.PACKAGE_NAME],
+                                                         serial=self._device_serial,
+                                                         apk_build_id=self._apk_build_id
+                                                         )
+        return None
