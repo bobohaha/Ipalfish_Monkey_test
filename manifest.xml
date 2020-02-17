@@ -1,6 +1,0 @@
-<manifest>
-    <runner module="src.runner_impl"
-            class="RunnerImpl">
-        <description>The Demo Of Runner.</description>
-    </runner>
-</manifest>
