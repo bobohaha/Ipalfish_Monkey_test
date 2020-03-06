@@ -15,5 +15,5 @@ ISSUE_WATCHERS = "ISSUE_WATCHERS"
 MONKEY_CHECK_INTERVAL_SECOND = 60
 
 AI_CLASS_ROOM_ACTIVITY = "cn.xckj.talk_junior/cn.xckj.talk.module.classroom.classroom.ClassRoomPicBookActivity"
-
-
+GIT_SITE = "https://github.com/bobohaha/AutoUITest.git"
+PROJECT_MAME = "AutoUITest"

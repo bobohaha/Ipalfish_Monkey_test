@@ -1,8 +1,9 @@
 from proxy.Util.log_util import LogUtil
 from proxy.Util.adb_util import ADBUtil
 from proxy.Util.kill_process_util import KillProcessUtil
-from proxy.Util.device_uitl import DeviceUtil
+from proxy.Util.git_util import git_util
 from proxy.Util.path_util import PathUtil
+from proxy.Util.GradleUtil import GradleUtil
 from proxy.param import *
 import time
 import os
@@ -14,15 +15,51 @@ class MonkeyTester:
     _log_file_name = "monkey_log.txt"
     _monkey_command = ""
     _seed = None
+    _git_site = GIT_SITE
+    _project_name = PROJECT_MAME
 
     def __init__(self, _serial, _path):
-        self.device_serial = _serial
+        self.serial_id = _serial
         self.out_path = _path
         pass
 
     def run(self):
-        self.run_monkey()
+        # self.run_monkey()
+        self.generate_and_install_apk()
         pass
+
+    def generate_and_install_apk(self):
+        self.generate_apk()
+        # self.install_apk()
+
+    def run_into_classroom(self):
+        pass
+
+    def generate_apk(self):
+        LogUtil.log("generate_apk")
+
+        _PathUtil = PathUtil(__file__)
+        _PathUtil.chdir_here()
+        git_util.git_clone(self._git_site, self._project_name)
+
+        LogUtil.log_start("run_start")
+
+        command = "adb -s serial shell am instrument -w -r -e debug false -e class com.ipalfish.autouitest.UIChecker com.ipalfish.autouitest.test"
+
+        LogUtil.log_start("run_end")
+        # GradleUtil.copy_properties_to(TableTester.PROJECT_NAME)
+        _PathUtil.chdir(self._project_name)
+
+        GradleUtil.clean_assembledebug_assembleAndroidTest()
+
+    def install_apk(self):
+        LogUtil.log("install_apk")
+
+        ADBUtil.install_and_async_monitor_google_dialog_to_workaround(self.serial_id,
+                                                                      "./app/build/outputs/apk/debug/app-debug.apk")
+        ADBUtil.install_and_async_monitor_google_dialog_to_workaround(self.serial_id,
+                                                                      "./app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
+        print ""
 
     def run_monkey(self):
         LogUtil.log_start("test: run monkey")
@@ -34,7 +71,7 @@ class MonkeyTester:
 
         LogUtil.log_start("kill_monkey")
 
-        KillProcessUtil.kill_device_process(self.device_serial, "monkey")
+        KillProcessUtil.kill_device_process(self.serial_id, "monkey")
 
         LogUtil.log_end("kill_monkey")
 
@@ -42,13 +79,13 @@ class MonkeyTester:
         LogUtil.log_start("run_monkey_in_background")
 
         self.init_monkey_command()
-        ADBUtil.execute_shell(self.device_serial, self._monkey_command)
+        ADBUtil.execute_shell(self.serial_id, self._monkey_command)
 
         LogUtil.log_end("run_monkey_in_background")
 
     def into_test_activity(self):
         command = ' am start -n ' + self.get_ai_activity()
-        ADBUtil.execute_shell(self.device_serial, command)
+        ADBUtil.execute_shell(self.serial_id, command)
         pass
 
     def get_ai_activity(self):
@@ -64,7 +101,7 @@ class MonkeyTester:
         LogUtil.log("hold_for_monkey_run_time(): monkey_round_maximum_time_min is " + str(self.monkey_round_maximum_time_min))
 
         try:
-            android_sdk = int(ADBUtil.get_prop(self.device_serial, 'ro.build.version.sdk'))
+            android_sdk = int(ADBUtil.get_prop(self.serial_id, 'ro.build.version.sdk'))
         except Exception:
             android_sdk = 24
         while True:
@@ -75,7 +112,7 @@ class MonkeyTester:
             time.sleep(2)
             # Set to volume down to prevent noise in lab.
             self.set_volume_down(android_version=android_sdk)
-            if ADBUtil.get_process_id_by_name(self.device_serial, "monkey") is None:
+            if ADBUtil.get_process_id_by_name(self.serial_id, "monkey") is None:
                 self.run_monkey_in_background()
 
         end_time = time.time()
@@ -113,14 +150,14 @@ class MonkeyTester:
     def set_volume_down(self, android_version=26):
         if android_version <= 25:
             # call audio method 3 and set media volume (3) down to 1 (minimum volume)
-            ADBUtil.execute_shell(self.device_serial, 'service call audio 3 i32 3 i32 1')
+            ADBUtil.execute_shell(self.serial_id, 'service call audio 3 i32 3 i32 1')
         else:
             # Set media (3) volume down to 1 (minimum volume)
-            std_out, std_err = ADBUtil.execute_shell(self.device_serial, 'media volume --stream 3 --get', output=True)
+            std_out, std_err = ADBUtil.execute_shell(self.serial_id, 'media volume --stream 3 --get', output=True)
             import re
             find_volume = re.search('volume is (\\d+) ', std_out)
             if find_volume is not None and int(find_volume.group(1)) > 1:
-                ADBUtil.execute_shell(self.device_serial, 'media volume --stream 3 --set 1', output=False)
+                ADBUtil.execute_shell(self.serial_id, 'media volume --stream 3 --set 1', output=False)
 
     # def get_crash_info(self, filename):
     #     return self.BUG_TYPE_CRASH + re.findall(r"app_crash(.+?)_", filename)[0]
