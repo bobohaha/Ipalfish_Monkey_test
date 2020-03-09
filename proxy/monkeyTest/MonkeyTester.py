@@ -24,13 +24,18 @@ class MonkeyTester:
         pass
 
     def run(self):
-        # self.run_monkey()
-        self.generate_and_install_apk()
+        self.generate_and_install_apk_run_preset()
+        self.run_monkey()
         pass
+
+    def generate_and_install_apk_run_preset(self):
+        self.generate_and_install_apk()
+        self.run_ui_test()
 
     def generate_and_install_apk(self):
         self.generate_apk()
-        # self.install_apk()
+        self.install_apk()
+        self.run_ui_test()
 
     def run_into_classroom(self):
         pass
@@ -40,17 +45,21 @@ class MonkeyTester:
 
         _PathUtil = PathUtil(__file__)
         _PathUtil.chdir_here()
-        git_util.git_clone(self._git_site, self._project_name)
-
         LogUtil.log_start("run_start")
-
-        command = "adb -s serial shell am instrument -w -r -e debug false -e class com.ipalfish.autouitest.UIChecker com.ipalfish.autouitest.test"
-
-        LogUtil.log_start("run_end")
+        git_util.git_clone(self._git_site, self._project_name)
         # GradleUtil.copy_properties_to(TableTester.PROJECT_NAME)
         _PathUtil.chdir(self._project_name)
+        os.system("pwd")
+        time.sleep(5)
 
         GradleUtil.clean_assembledebug_assembleAndroidTest()
+        LogUtil.log_start("run_end")
+
+    def run_ui_test(self):
+        LogUtil.log_start("run_ui_test")
+        command = "adb -s " + self.serial_id + " shell am instrument -w -r -e debug false -e class com.ipalfish.autouitest.UIChecker com.ipalfish.autouitest.test"
+        os.system(command)
+        LogUtil.log_end("run_ui_test")
 
     def install_apk(self):
         LogUtil.log("install_apk")
@@ -159,14 +168,8 @@ class MonkeyTester:
             if find_volume is not None and int(find_volume.group(1)) > 1:
                 ADBUtil.execute_shell(self.serial_id, 'media volume --stream 3 --set 1', output=False)
 
-    # def get_crash_info(self, filename):
-    #     return self.BUG_TYPE_CRASH + re.findall(r"app_crash(.+?)_", filename)[0]
-    #
-    # def get_anr_info(self, filename):
-    #     return self.BUG_TYPE_ANR + re.findall(r"anr_(.+?)_", filename)[0]
-
 
 if __name__ == '__main__':
     args = sys.argv[1:]
     _MonkeyTest = MonkeyTester(args[0], args[1])
-    _MonkeyTest.into_test_activity()
+

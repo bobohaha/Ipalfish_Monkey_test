@@ -267,8 +267,7 @@ class ADBUtil:
     @staticmethod
     def execute_shell(serial, shell_command, output=False, quiet=False):
         command = "{} -s {} shell {}".format(adb, serial, shell_command)
-        print (command)
-        # UsbUtil.make_sure_usb_connected(serial)
+        print(command)
 
         if not output:
             ShellUtil.execute_shell(command, output, quiet)
@@ -334,9 +333,6 @@ class ADBUtil:
         if serial == "" or package_name == "":
             raise Exception("Parameter error: serial and package_name shouldn't be \"\" !")
         std_out, std_err = ADBUtil.execute_shell(serial, "pm path %s" % package_name, output=True)
-        # pm path com.android.thememanager
-        # Will get response as following:
-        # package:/data/app/com.android.thememanager-8_76_QtAZedbweCb3xwKDA==/base.apk
         cmd_ret = std_out.strip()
         try:
             return cmd_ret[cmd_ret.find('/'):]
@@ -390,6 +386,26 @@ class ADBUtil:
     def check_zygote_ready(serial):
         std_out, std_err = ADBUtil.execute_shell(serial, 'dumpsys window | grep mFocus', output=True)
         if ADBUtil.is_zygote_failed(std_err):
-            print ('check_zygote_ready(): Fail to execute commands, try re-start zygote')
+            print('check_zygote_ready(): Fail to execute commands, try re-start zygote')
             ADBUtil.restart_zygote(serial)
+
+    @staticmethod
+    def install_and_async_monitor_google_dialog_to_workaround(serial, apk_path):
+        LogUtil.log_start("install_and_async_monitor_google_dialog_to_workaround")
+
+        install_authorization = "adb -s " + serial + \
+                                " shell settings put global verifier_verify_adb_installs 0"
+        os.system(install_authorization)
+
+        command = "adb -s " + serial + " install -r -d " + apk_path + " & "
+
+        output = os.popen(command)
+        text = output.read().strip()
+
+        if text.endswith("Success"):
+            print "%s install success" % apk_path
+        else:
+            print "%s install failure" % apk_path
+
+        LogUtil.log_end("install_and_async_monitor_google_dialog_to_workaround")
 
