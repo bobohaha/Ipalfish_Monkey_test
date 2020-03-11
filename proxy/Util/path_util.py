@@ -43,6 +43,10 @@ class PathUtil:
 
             os.system(command)
 
+    @staticmethod
+    def get_current_path():
+        print os.getcwd()
+
 
 
 
